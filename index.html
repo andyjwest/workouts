@@ -2,70 +2,55 @@
 <html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Workout Viewer</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SheetGym</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 4px solid #38bdf8; width: 40px; height: 40px; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Mobile friendly inputs */
+        input, select, textarea { font-size: 16px; }
     </style>
 </head>
-<body class="bg-slate-900 text-slate-100 h-full">
+<body class="bg-slate-900 text-slate-100 h-full flex flex-col overflow-hidden">
 
-    <div id="app" class="max-w-2xl mx-auto p-4 md:p-6 h-full overflow-y-auto">
-        <header class="relative flex items-center justify-between mb-6 h-10">
-            <button id="home-button" class="text-sky-400 font-bold py-2 px-4 rounded-lg transition-colors hover:bg-slate-800">Home</button>
-            <h1 class="text-2xl font-bold text-sky-400" id="header-title">Workout Viewer</h1>
-            <button id="progress-button" class="text-sky-400 font-bold py-2 px-4 rounded-lg transition-colors hover:bg-slate-800">Progress</button>
-        </header>
+    <!-- Header -->
+    <header class="bg-slate-800 border-b border-slate-700 h-14 flex items-center justify-center shrink-0 z-10">
+        <h1 class="text-lg font-bold text-sky-400" id="header-title">SheetGym</h1>
+    </header>
 
-        <main>
-            <!-- Loading View -->
-            <div id="loading-view" class="flex justify-center items-center py-20">
-                <div class="spinner"></div>
-            </div>
+    <!-- Main Content Area -->
+    <main id="app-content" class="flex-1 overflow-y-auto relative w-full max-w-md mx-auto">
+        <!-- Views will be injected here -->
+        <div id="loading-view" class="flex flex-col items-center justify-center h-full space-y-4">
+             <div class="w-10 h-10 border-4 border-sky-500/30 border-t-sky-500 rounded-full animate-spin"></div>
+             <p class="text-slate-400">Loading Sheet Data...</p>
+        </div>
+    </main>
 
-            <!-- Workouts List View (Home) -->
-            <div id="workouts-list-view">
-                <p class="text-slate-400 text-center mb-4">Select a workout date to see the details.</p>
-                <div id="workouts-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-            </div>
+    <!-- Bottom Navigation -->
+    <nav class="bg-slate-800 border-t border-slate-700 h-16 shrink-0 z-10 pb-safe">
+        <div class="flex justify-around items-center h-full max-w-md mx-auto">
+            <button id="nav-gym" class="nav-btn flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-sky-400 active:text-sky-500 transition-colors">
+                <i class="ph ph-barbell text-2xl mb-1"></i>
+                <span class="text-xs font-medium">In Gym</span>
+            </button>
+            <button id="nav-planner" class="nav-btn flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-sky-400 active:text-sky-500 transition-colors">
+                <i class="ph ph-calendar-plus text-2xl mb-1"></i>
+                <span class="text-xs font-medium">Planner</span>
+            </button>
+            <button id="nav-reports" class="nav-btn flex flex-col items-center justify-center w-full h-full text-slate-400 hover:text-sky-400 active:text-sky-500 transition-colors">
+                <i class="ph ph-chart-line-up text-2xl mb-1"></i>
+                <span class="text-xs font-medium">Reports</span>
+            </button>
+        </div>
+    </nav>
 
-            <!-- Log Detail View -->
-            <div id="log-detail-view" class="hidden">
-                <div class="flex items-center mb-4">
-                    <button id="back-to-home-button" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg mr-4 transition-colors">
-                        &larr; Back
-                    </button>
-                    <h2 id="log-title" class="text-2xl font-bold text-sky-400"></h2>
-                </div>
-                <div id="log-exercise-container" class="space-y-6"></div>
-            </div>
-
-            <!-- Exercise Progress View -->
-            <div id="exercise-progress-view" class="hidden">
-                <p class="text-slate-400 text-center mb-4">Select an exercise to see your progress.</p>
-                <div id="exercise-list-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-            </div>
-
-            <!-- Exercise Detail View -->
-            <div id="exercise-detail-view" class="hidden">
-                <div class="flex items-center mb-4">
-                    <button id="back-to-progress-button" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg mr-4 transition-colors">
-                        &larr; Back
-                    </button>
-                    <h2 id="exercise-title" class="text-2xl font-bold text-sky-400"></h2>
-                </div>
-                <div class="bg-slate-800 p-4 rounded-lg">
-                    <canvas id="progress-chart"></canvas>
-                </div>
-            </div>
-        </main>
-    </div>
-
-    <script src="script.js"></script>
+    <script type="module" src="src/app.js"></script>
 </body>
 </html>

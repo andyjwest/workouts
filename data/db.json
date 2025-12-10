@@ -1,0 +1,50 @@
+{
+  "routines": [
+    {
+      "id": "routine_001",
+      "name": "Full Body A",
+      "exercises": [
+        { "name": "Squat", "targetSets": 3, "targetReps": "8-10" },
+        { "name": "Bench Press", "targetSets": 3, "targetReps": "8-10" },
+        { "name": "Barbell Row", "targetSets": 3, "targetReps": "10-12" }
+      ]
+    },
+    {
+      "id": "routine_002",
+      "name": "Upper Body B",
+      "exercises": [
+        { "name": "Overhead Press", "targetSets": 3, "targetReps": "8-10" },
+        { "name": "Pull Up", "targetSets": 3, "targetReps": "AMRAP" }
+      ]
+    }
+  ],
+  "workouts": [
+    {
+      "id": "log_001",
+      "date": "2023-10-25T10:00:00Z",
+      "routineName": "Full Body A",
+      "durationMinutes": 60,
+      "exercises": [
+        {
+          "name": "Squat",
+          "sets": [
+            { "reps": 10, "weight": 135 },
+            { "reps": 10, "weight": 135 },
+            { "reps": 10, "weight": 135 }
+          ]
+        },
+        {
+          "name": "Bench Press",
+          "sets": [
+            { "reps": 10, "weight": 95 },
+            { "reps": 8, "weight": 105 },
+            { "reps": 6, "weight": 115 }
+          ]
+        }
+      ]
+    }
+  ],
+  "exercises": [
+    "Squat", "Bench Press", "Deadlift", "Overhead Press", "Barbell Row", "Pull Up", "Dumbbell Curl", "Tricep Extension"
+  ]
+}
