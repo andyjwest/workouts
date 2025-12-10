@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workout Viewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .spinner { border: 4px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top: 4px solid #38bdf8; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 h-full">
+
+    <div id="app" class="max-w-2xl mx-auto p-4 md:p-6 h-full overflow-y-auto">
+        <header class="relative flex items-center justify-between mb-6 h-10">
+            <button id="home-button" class="text-sky-400 font-bold py-2 px-4 rounded-lg transition-colors hover:bg-slate-800">Home</button>
+            <h1 class="text-2xl font-bold text-sky-400" id="header-title">Workout Viewer</h1>
+            <button id="progress-button" class="text-sky-400 font-bold py-2 px-4 rounded-lg transition-colors hover:bg-slate-800">Progress</button>
+        </header>
+
+        <main>
+            <!-- Loading View -->
+            <div id="loading-view" class="flex justify-center items-center py-20">
+                <div class="spinner"></div>
+            </div>
+
+            <!-- Workouts List View (Home) -->
+            <div id="workouts-list-view">
+                <p class="text-slate-400 text-center mb-4">Select a workout date to see the details.</p>
+                <div id="workouts-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </div>
+
+            <!-- Log Detail View -->
+            <div id="log-detail-view" class="hidden">
+                <div class="flex items-center mb-4">
+                    <button id="back-to-home-button" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg mr-4 transition-colors">
+                        &larr; Back
+                    </button>
+                    <h2 id="log-title" class="text-2xl font-bold text-sky-400"></h2>
+                </div>
+                <div id="log-exercise-container" class="space-y-6"></div>
+            </div>
+
+            <!-- Exercise Progress View -->
+            <div id="exercise-progress-view" class="hidden">
+                <p class="text-slate-400 text-center mb-4">Select an exercise to see your progress.</p>
+                <div id="exercise-list-container" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+            </div>
+
+            <!-- Exercise Detail View -->
+            <div id="exercise-detail-view" class="hidden">
+                <div class="flex items-center mb-4">
+                    <button id="back-to-progress-button" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-2 px-4 rounded-lg mr-4 transition-colors">
+                        &larr; Back
+                    </button>
+                    <h2 id="exercise-title" class="text-2xl font-bold text-sky-400"></h2>
+                </div>
+                <div class="bg-slate-800 p-4 rounded-lg">
+                    <canvas id="progress-chart"></canvas>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
