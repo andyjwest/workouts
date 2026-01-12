@@ -1,0 +1,132 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Workout",
+  "description": "A collection of daily workouts",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "properties": {
+      "date": {
+        "type": "string",
+        "format": "date"
+      },
+      "exercises": {
+        "type": "array",
+        "items": {
+          "oneOf": [
+            {
+              "$ref": "#/definitions/exercise"
+            },
+            {
+              "type": "object",
+              "properties": {
+                "superset": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/exercise"
+                  }
+                }
+              },
+              "required": ["superset"]
+            }
+          ]
+        }
+      }
+    },
+    "required": ["date", "exercises"]
+  },
+  "definitions": {
+    "exercise": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "muscle_group": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "type": {
+          "type": "string",
+          "enum": ["strength", "cardio", "flexibility"]
+        },
+        "category": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "string"
+        }
+      },
+      "required": ["name", "muscle_group", "type"],
+      "if": {
+        "properties": { "type": { "const": "strength" } }
+      },
+      "then": {
+        "properties": {
+          "sets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/definitions/set"
+            }
+          }
+        },
+        "required": ["sets"]
+      },
+      "else": {
+        "properties": {
+          "duration": {
+            "type": "number"
+          },
+          "distance": {
+            "type": "string"
+          }
+        },
+        "required": ["duration"]
+      }
+    },
+    "set": {
+      "type": "object",
+      "properties": {
+        "reps": {
+          "type": "integer"
+        },
+        "weight": {
+          "type": "number"
+        },
+        "tempo": {
+          "$ref": "#/definitions/tempo"
+        },
+        "distance": {
+          "type": "string"
+        },
+        "height": {
+          "type": "string"
+        },
+        "rpe": {
+          "type": "number"
+        }
+      },
+      "required": ["reps", "weight"]
+    },
+    "tempo": {
+      "type": "object",
+      "properties": {
+        "down": {
+          "type": "integer"
+        },
+        "hold": {
+          "type": "integer"
+        },
+        "up": {
+          "type": "integer"
+        },
+        "pause": {
+          "type": "integer"
+        }
+      },
+      "required": ["down", "hold", "up", "pause"]
+    }
+  }
+}

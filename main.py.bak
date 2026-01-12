@@ -1,0 +1,1569 @@
+from fastapi import FastAPI, HTTPException
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+from typing import List, Optional
+import psycopg2
+import psycopg2.extras
+import os
+from datetime import date, time, datetime
+import httpx
+import base64
+from fastapi.responses import RedirectResponse
+from dotenv import load_dotenv
+
+load_dotenv()
+
+app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="."), name="static")
+
+# Pydantic models based on the new schema
+class User(BaseModel):
+    id: Optional[int] = None
+    username: str
+    email: str
+    password_hash: Optional[str] = None
+    google_id: Optional[str] = None
+
+class UserFitbitAuth(BaseModel):
+    user_id: int
+    access_token: str
+    refresh_token: str
+    expires_at: int
+    scope: str
+
+class BodyMeasurement(BaseModel):
+    id: Optional[int] = None
+    user_id: int
+    date: date
+    body_weight_kg: Optional[float] = None
+    body_fat_percentage: Optional[float] = None
+    notes: Optional[str] = None
+
+class Exercise(BaseModel):
+    id: Optional[int] = None
+    name: str
+    description: Optional[str] = None
+    type: Optional[str] = None
+    equipment: Optional[str] = None
+    default_tempo: Optional[str] = None
+    default_sets: Optional[int] = None
+    default_reps: Optional[str] = None
+    default_rest_seconds: Optional[int] = None
+    default_weight_percent: Optional[float] = None
+    default_time_seconds: Optional[int] = None
+
+    tracked_metrics: str = 'reps,weight'
+    muscle_group: Optional[List[str]] = []
+
+class Muscle(BaseModel):
+    id: Optional[int] = None
+    name: str
+
+class ExerciseMuscle(BaseModel):
+    exercise_id: int
+    muscle_id: int
+    is_primary: bool = True
+
+class Workout(BaseModel):
+    id: Optional[int] = None
+    user_id: int
+    date: date
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
+    notes: Optional[str] = None
+
+class WorkoutExercise(BaseModel):
+    id: Optional[int] = None
+    workout_id: int
+    exercise_id: int
+    sequence: int
+
+class WorkoutSet(BaseModel):
+    id: Optional[int] = None
+    workout_exercise_id: int
+    set_number: int
+    reps: Optional[int] = None
+    weight_kg: Optional[float] = None
+    duration_seconds: Optional[int] = None
+    distance_m: Optional[float] = None
+    height_cm: Optional[float] = None
+    tempo: Optional[str] = None
+    notes: Optional[str] = None
+    completed: bool = False
+
+class RoutineExercise(BaseModel):
+    id: Optional[int] = None
+    routine_day_id: int
+    exercise_id: int
+    sequence: int
+    suggested_sets: Optional[int] = None
+    suggested_reps: Optional[str] = None
+    suggested_weight_percent: Optional[float] = None
+    rest_period_seconds: Optional[int] = None
+    tempo: Optional[str] = None
+    group_name: Optional[str] = None
+    suggested_time_seconds: Optional[int] = None
+
+class RoutineDay(BaseModel):
+    id: Optional[int] = None
+    routine_id: int
+    name: str
+    day_of_week: Optional[int] = None
+    exercises: List[RoutineExercise] = []
+
+class Routine(BaseModel):
+    id: Optional[int] = None
+    user_id: int
+    name: str
+    description: Optional[str] = None
+    is_active: bool = False
+    days: List[RoutineDay] = []
+
+class SetResponse(BaseModel):
+    id: Optional[int] = None
+    set_number: Optional[int] = None
+    reps: Optional[int] = None
+    weight_kg: Optional[float] = None
+    distance_m: Optional[float] = None
+    duration_seconds: Optional[int] = None
+    notes: Optional[str] = None
+    completed: bool = False
+
+class ExerciseResponse(BaseModel):
+    id: int
+    name: str
+    muscle_group: List[str] = []
+    sets: List[SetResponse] = []
+    group_name: Optional[str] = None
+
+class WorkoutResponse(BaseModel):
+    id: int
+    user_id: int
+    date: date
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
+    notes: Optional[str] = None
+    exercises: List[ExerciseResponse] = []
+
+
+class SuggestedExercise(BaseModel):
+    id: int
+    name: str
+    muscle_group: List[str] = []
+    group_name: Optional[str] = None
+    suggested_sets: Optional[int] = None
+    suggested_reps: Optional[str] = None
+    suggested_weight_percent: Optional[float] = None
+    rest_period_seconds: Optional[int] = None
+    tempo: Optional[str] = None
+
+class SuggestedWorkout(BaseModel):
+    routine_name: str
+    day_name: str
+    exercises: List[SuggestedExercise]
+
+
+
+# Database connection
+def get_db_connection():
+    conn = psycopg2.connect(
+        dbname=os.environ.get("DB_NAME"),
+        user=os.environ.get("DB_USER"),
+        password=os.environ.get("DB_PASSWORD"),
+        host=os.environ.get("DB_HOST"),
+        port=os.environ.get("DB_PORT")
+    )
+    return conn
+
+
+
+
+
+@app.get("/")
+def read_root():
+    return {"Hello": "World"}
+
+@app.post("/users/", response_model=User)
+def create_user(user: User):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            "INSERT INTO users (username, email, password_hash, google_id) VALUES (%s, %s, %s, %s) RETURNING *",
+            (user.username, user.email, user.password_hash, user.google_id)
+        )
+        new_user_data = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return User(**new_user_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- Routine Exercises ---
+
+@app.post("/routine_exercises/", response_model=RoutineExercise)
+def create_routine_exercise(routine_exercise: RoutineExercise):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            """INSERT INTO routine_exercises 
+               (routine_day_id, exercise_id, sequence, suggested_sets, suggested_reps, suggested_weight_percent, rest_period_seconds, tempo, group_name) 
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING *""",
+            (routine_exercise.routine_day_id, routine_exercise.exercise_id, routine_exercise.sequence, 
+             routine_exercise.suggested_sets, routine_exercise.suggested_reps, routine_exercise.suggested_weight_percent, routine_exercise.rest_period_seconds, routine_exercise.tempo, routine_exercise.group_name)
+        )
+        new_re_data = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return RoutineExercise(**new_re_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/users/{user_id}", response_model=User)
+def get_user(user_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+        user_data = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if user_data is None:
+            raise HTTPException(status_code=404, detail="User not found")
+        return User(**user_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/users/", response_model=List[User])
+def get_users():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM users")
+        users_data = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return [User(**u) for u in users_data]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/users/{user_id}", response_model=User)
+def update_user(user_id: int, user: User):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            "UPDATE users SET username = %s, email = %s, password_hash = %s, google_id = %s WHERE id = %s RETURNING *",
+            (user.username, user.email, user.password_hash, user.google_id, user_id)
+        )
+        updated_user_data = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        if updated_user_data is None:
+            raise HTTPException(status_code=404, detail="User not found")
+        return User(**updated_user_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/users/{user_id}", status_code=204)
+def delete_user(user_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM users WHERE id = %s RETURNING id", (user_id,))
+        deleted_id = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        if deleted_id is None:
+            raise HTTPException(status_code=404, detail="User not found")
+        return
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/body_measurements/", response_model=BodyMeasurement)
+def create_body_measurement(body_measurement: BodyMeasurement):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            "INSERT INTO body_measurements (user_id, date, body_weight_kg, body_fat_percentage, notes) VALUES (%s, %s, %s, %s, %s) RETURNING *",
+            (body_measurement.user_id, body_measurement.date, body_measurement.body_weight_kg, body_measurement.body_fat_percentage, body_measurement.notes)
+        )
+        new_body_measurement_data = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return BodyMeasurement(**new_body_measurement_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/body_measurements/{body_measurement_id}", response_model=BodyMeasurement)
+def get_body_measurement(body_measurement_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM body_measurements WHERE id = %s", (body_measurement_id,))
+        body_measurement_data = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if body_measurement_data is None:
+            raise HTTPException(status_code=404, detail="Body measurement not found")
+        return BodyMeasurement(**body_measurement_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/body_measurements/", response_model=List[BodyMeasurement])
+def get_body_measurements():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM body_measurements")
+        body_measurements_data = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return [BodyMeasurement(**bm) for bm in body_measurements_data]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/body_measurements/{body_measurement_id}", response_model=BodyMeasurement)
+def update_body_measurement(body_measurement_id: int, body_measurement: BodyMeasurement):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            "UPDATE body_measurements SET user_id = %s, date = %s, body_weight_kg = %s, body_fat_percentage = %s, notes = %s WHERE id = %s RETURNING *",
+            (body_measurement.user_id, body_measurement.date, body_measurement.body_weight_kg, body_measurement.body_fat_percentage, body_measurement.notes, body_measurement_id)
+        )
+        updated_body_measurement_data = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        if updated_body_measurement_data is None:
+            raise HTTPException(status_code=404, detail="Body measurement not found")
+        return BodyMeasurement(**updated_body_measurement_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/body_measurements/{body_measurement_id}", status_code=204)
+def delete_body_measurement(body_measurement_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM body_measurements WHERE id = %s RETURNING id", (body_measurement_id,))
+        deleted_id = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        if deleted_id is None:
+            raise HTTPException(status_code=404, detail="Body measurement not found")
+        return
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/muscles/", response_model=Muscle)
+def create_muscle(muscle: Muscle):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            "INSERT INTO muscles (name) VALUES (%s) RETURNING *",
+            (muscle.name,)
+        )
+        new_muscle_data = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return Muscle(**new_muscle_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/muscles/{muscle_id}", response_model=Muscle)
+def get_muscle(muscle_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM muscles WHERE id = %s", (muscle_id,))
+        muscle_data = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if muscle_data is None:
+            raise HTTPException(status_code=404, detail="Muscle not found")
+        return Muscle(**muscle_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/muscles/", response_model=List[Muscle])
+def get_muscles():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM muscles")
+        muscles_data = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return [Muscle(**m) for m in muscles_data]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/muscles/{muscle_id}", response_model=Muscle)
+def update_muscle(muscle_id: int, muscle: Muscle):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            "UPDATE muscles SET name = %s WHERE id = %s RETURNING *",
+            (muscle.name, muscle_id)
+        )
+        updated_muscle_data = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        if updated_muscle_data is None:
+            raise HTTPException(status_code=404, detail="Muscle not found")
+        return Muscle(**updated_muscle_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/muscles/{muscle_id}", status_code=204)
+def delete_muscle(muscle_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM muscles WHERE id = %s RETURNING id", (muscle_id,))
+        deleted_id = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        if deleted_id is None:
+            raise HTTPException(status_code=404, detail="Muscle not found")
+        return
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/exercise_muscles/", response_model=ExerciseMuscle)
+def create_exercise_muscle(exercise_muscle: ExerciseMuscle):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            "INSERT INTO exercise_muscles (exercise_id, muscle_id, is_primary) VALUES (%s, %s, %s) RETURNING *",
+            (exercise_muscle.exercise_id, exercise_muscle.muscle_id, exercise_muscle.is_primary)
+        )
+        new_exercise_muscle_data = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return ExerciseMuscle(**new_exercise_muscle_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/exercise_muscles/{exercise_id}/{muscle_id}", response_model=ExerciseMuscle)
+def get_exercise_muscle(exercise_id: int, muscle_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM exercise_muscles WHERE exercise_id = %s AND muscle_id = %s", (exercise_id, muscle_id))
+        exercise_muscle_data = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if exercise_muscle_data is None:
+            raise HTTPException(status_code=404, detail="Exercise-muscle link not found")
+        return ExerciseMuscle(**exercise_muscle_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/exercise_muscles/{exercise_id}/{muscle_id}", status_code=204)
+def delete_exercise_muscle(exercise_id: int, muscle_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM exercise_muscles WHERE exercise_id = %s AND muscle_id = %s RETURNING exercise_id", (exercise_id, muscle_id))
+        deleted_id = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        if deleted_id is None:
+            raise HTTPException(status_code=404, detail="Exercise-muscle link not found")
+        return
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/exercises/", response_model=Exercise)
+def create_exercise(exercise: Exercise):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            "INSERT INTO exercises (name, description, type, equipment, default_tempo, tracked_metrics, default_sets, default_reps, default_rest_seconds, default_weight_percent, default_time_seconds) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING *",
+            (exercise.name, exercise.description, exercise.type, exercise.equipment, exercise.default_tempo, exercise.tracked_metrics, exercise.default_sets, exercise.default_reps, exercise.default_rest_seconds, exercise.default_weight_percent, exercise.default_time_seconds)
+        )
+        new_exercise_data = dict(cursor.fetchone())
+        
+        # Handle muscle groups
+        if exercise.muscle_group:
+            for muscle_name in exercise.muscle_group:
+                # Find muscle ID
+                cursor.execute("SELECT id FROM muscles WHERE name = %s", (muscle_name,))
+                muscle_res = cursor.fetchone()
+                if muscle_res:
+                    muscle_id = muscle_res[0]
+                    cursor.execute("INSERT INTO exercise_muscles (exercise_id, muscle_id) VALUES (%s, %s)", (new_exercise_data['id'], muscle_id))
+        
+        conn.commit()
+        
+        # Refetch with muscles
+        new_exercise_data['muscle_group'] = exercise.muscle_group
+        
+        cursor.close()
+        conn.close()
+        return Exercise(**new_exercise_data)
+    except psycopg2.errors.UniqueViolation:
+        conn.rollback()
+        raise HTTPException(status_code=409, detail=f"Exercise with name '{exercise.name}' already exists.")
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/exercises/{exercise_id}", response_model=Exercise)
+def get_exercise(exercise_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        # Fetch with muscles aggregated
+        cursor.execute("""
+            SELECT e.*, array_remove(array_agg(m.name), NULL) as muscle_group 
+            FROM exercises e 
+            LEFT JOIN exercise_muscles em ON e.id = em.exercise_id 
+            LEFT JOIN muscles m ON em.muscle_id = m.id 
+            WHERE e.id = %s
+            GROUP BY e.id
+        """, (exercise_id,))
+        
+        exercise_data = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if exercise_data is None:
+            raise HTTPException(status_code=404, detail="Exercise not found")
+        return Exercise(**exercise_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/exercises/", response_model=List[Exercise])
+def get_exercises():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("""
+            SELECT e.*, array_remove(array_agg(m.name), NULL) as muscle_group 
+            FROM exercises e 
+            LEFT JOIN exercise_muscles em ON e.id = em.exercise_id 
+            LEFT JOIN muscles m ON em.muscle_id = m.id 
+            GROUP BY e.id
+            ORDER BY e.name ASC
+        """)
+        exercises_data = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return [Exercise(**e) for e in exercises_data]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/exercises/{exercise_id}", response_model=Exercise)
+def update_exercise(exercise_id: int, exercise: Exercise):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            "UPDATE exercises SET name = %s, description = %s, type = %s, equipment = %s, default_tempo = %s, tracked_metrics = %s, default_sets = %s, default_reps = %s, default_rest_seconds = %s, default_weight_percent = %s, default_time_seconds = %s WHERE id = %s RETURNING *",
+            (exercise.name, exercise.description, exercise.type, exercise.equipment, exercise.default_tempo, exercise.tracked_metrics, exercise.default_sets, exercise.default_reps, exercise.default_rest_seconds, exercise.default_weight_percent, exercise.default_time_seconds, exercise_id)
+        )
+        updated_exercise_data = dict(cursor.fetchone())
+        
+        # Update muscle groups
+        # First remove existing
+        cursor.execute("DELETE FROM exercise_muscles WHERE exercise_id = %s", (exercise_id,))
+        
+        # Add new
+        if exercise.muscle_group:
+            for muscle_name in exercise.muscle_group:
+                 # Find muscle ID
+                cursor.execute("SELECT id FROM muscles WHERE name = %s", (muscle_name,))
+                muscle_res = cursor.fetchone()
+                if muscle_res:
+                    muscle_id = muscle_res[0]
+                    cursor.execute("INSERT INTO exercise_muscles (exercise_id, muscle_id) VALUES (%s, %s)", (exercise_id, muscle_id))
+        
+        conn.commit()
+        
+        # Set for return
+        updated_exercise_data['muscle_group'] = exercise.muscle_group
+        
+        cursor.close()
+        conn.close()
+        if updated_exercise_data is None:
+            raise HTTPException(status_code=404, detail="Exercise not found")
+        return Exercise(**updated_exercise_data)
+    except psycopg2.errors.UniqueViolation:
+        conn.rollback()
+        raise HTTPException(status_code=409, detail=f"Exercise with name '{exercise.name}' already exists.")
+    except Exception as e:
+        conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/exercises/{exercise_id}", status_code=204)
+def delete_exercise(exercise_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM exercises WHERE id = %s RETURNING id", (exercise_id,))
+        deleted_id = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        if deleted_id is None:
+            raise HTTPException(status_code=404, detail="Exercise not found")
+        return
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/routines/", response_model=Routine)
+def create_routine(routine: Routine):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            "INSERT INTO routines (user_id, name, description, is_active) VALUES (%s, %s, %s, %s) RETURNING *",
+            (routine.user_id, routine.name, routine.description, routine.is_active)
+        )
+        new_routine_data = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return Routine(**new_routine_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+def _fetch_routine_details(cursor, routine_data):
+    routine = dict(routine_data)
+    
+    # Fetch days
+    cursor.execute("SELECT * FROM routine_days WHERE routine_id = %s ORDER BY day_of_week", (routine['id'],))
+    days_data = cursor.fetchall()
+    
+    days = []
+    for d in days_data:
+        day = dict(d)
+        # Fetch exercises for each day
+        cursor.execute("SELECT * FROM routine_exercises WHERE routine_day_id = %s ORDER BY sequence", (day['id'],))
+        exercises_data = cursor.fetchall()
+        day['exercises'] = [dict(e) for e in exercises_data]
+        days.append(day)
+        
+    routine['days'] = days
+    return routine
+
+@app.get("/routines/{routine_id}", response_model=Routine)
+def get_routine(routine_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM routines WHERE id = %s", (routine_id,))
+        routine_data = cursor.fetchone()
+        
+        if routine_data is None:
+            cursor.close()
+            conn.close()
+            raise HTTPException(status_code=404, detail="Routine not found")
+            
+        routine = _fetch_routine_details(cursor, routine_data)
+        
+        cursor.close()
+        conn.close()
+        return Routine(**routine)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/routines/", response_model=List[Routine])
+def get_routines():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM routines")
+        routines_data = cursor.fetchall()
+        
+        routines = []
+        for r_data in routines_data:
+            routines.append(_fetch_routine_details(cursor, r_data))
+            
+        cursor.close()
+        conn.close()
+        return [Routine(**r) for r in routines]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/routines/{routine_id}", response_model=Routine)
+def update_routine(routine_id: int, routine: Routine):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            "UPDATE routines SET user_id = %s, name = %s, description = %s, is_active = %s WHERE id = %s RETURNING *",
+            (routine.user_id, routine.name, routine.description, routine.is_active, routine_id)
+        )
+        updated_routine_data = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        if updated_routine_data is None:
+            raise HTTPException(status_code=404, detail="Routine not found")
+        return Routine(**updated_routine_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/routines/{routine_id}", status_code=204)
+def delete_routine(routine_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM routines WHERE id = %s RETURNING id", (routine_id,))
+        deleted_id = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        if deleted_id is None:
+            raise HTTPException(status_code=404, detail="Routine not found")
+        return
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/routines/{routine_id}/activate")
+def activate_routine(routine_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        # Set all to false
+        cursor.execute("UPDATE routines SET is_active = FALSE")
+        # Set target to true
+        cursor.execute("UPDATE routines SET is_active = TRUE WHERE id = %s", (routine_id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"status": "success"}
+    except Exception as e:
+         raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/workouts/suggested", response_model=Optional[SuggestedWorkout])
+def get_suggested_workout():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        
+        # 1. Get active routine
+        cursor.execute("SELECT * FROM routines WHERE is_active = TRUE")
+        active_routine = cursor.fetchone()
+        
+        if not active_routine:
+            cursor.close()
+            conn.close()
+            return None
+            
+        # 2. Get routine days ordered
+        cursor.execute("SELECT * FROM routine_days WHERE routine_id = %s ORDER BY day_of_week", (active_routine['id'],))
+        routine_days = cursor.fetchall()
+        
+        if not routine_days:
+            cursor.close()
+            conn.close()
+            return None
+
+        # 3. Get last workout to determine next day
+        cursor.execute("""
+            SELECT w.*, string_agg(e.name, ',') as exercise_names 
+            FROM workouts w
+            LEFT JOIN workout_exercises we ON w.id = we.workout_id
+            LEFT JOIN exercises e ON we.exercise_id = e.id
+            GROUP BY w.id
+            ORDER BY w.date DESC, w.start_time DESC LIMIT 1
+        """)
+        last_workout = cursor.fetchone()
+        
+        target_day = routine_days[0]
+        
+        # Simple heuristic: if we have a last workout, try to match it to a day, then pick the next one.
+        if last_workout:
+             last_exercises = set(last_workout['exercise_names'].split(',') if last_workout['exercise_names'] else [])
+             
+             for i, day in enumerate(routine_days):
+                 # Get exercises for this day to compare
+                 cursor.execute("SELECT e.name FROM routine_exercises re JOIN exercises e ON re.exercise_id = e.id WHERE re.routine_day_id = %s", (day['id'],))
+                 day_rows = cursor.fetchall()
+                 day_exercises = set(row[0] for row in day_rows)
+                 
+                 # Relaxed matching: if 50% overlap of exercises, assume this was the day performed
+                 if day_exercises and len(day_exercises.intersection(last_exercises)) / len(day_exercises) > 0.5:
+                     # Match found! Next day is i + 1 (wrapping around)
+                     next_day_index = (i + 1) % len(routine_days)
+                     target_day = routine_days[next_day_index]
+                     break
+        
+        # 4. Construct SuggestedWorkout response
+        cursor.execute("""
+            SELECT e.id, e.name, array_remove(array_agg(m.name), NULL) as muscle_group, re.group_name,
+                   re.suggested_sets, re.suggested_reps, re.suggested_weight_percent, re.rest_period_seconds, re.tempo
+            FROM routine_exercises re
+            JOIN exercises e ON re.exercise_id = e.id
+            LEFT JOIN exercise_muscles em ON e.id = em.exercise_id
+            LEFT JOIN muscles m ON em.muscle_id = m.id
+            WHERE re.routine_day_id = %s
+            GROUP BY re.id, e.id, re.sequence, re.group_name
+            ORDER BY re.sequence
+        """, (target_day['id'],))
+        
+        exercises_data = []
+        rows = cursor.fetchall()
+        for row in rows:
+            exercises_data.append({
+                "id": row['id'],
+                "name": row['name'],
+                "muscle_group": row['muscle_group'] if row['muscle_group'] else [],
+                "group_name": row['group_name'],
+                "suggested_sets": row['suggested_sets'],
+                "suggested_reps": row['suggested_reps'],
+                "suggested_weight_percent": row['suggested_weight_percent'],
+                "rest_period_seconds": row['rest_period_seconds'],
+                "tempo": row['tempo']
+            })
+            
+        cursor.close()
+        conn.close()
+        
+        return {
+            "routine_name": active_routine['name'],
+            "day_name": target_day['name'],
+            "exercises": exercises_data
+        }
+
+    except Exception as e:
+        print(f"Error in suggested workout: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- Routine Days ---
+
+@app.post("/routine_days/", response_model=RoutineDay)
+def create_routine_day(routine_day: RoutineDay):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            "INSERT INTO routine_days (routine_id, name, day_of_week) VALUES (%s, %s, %s) RETURNING *",
+            (routine_day.routine_id, routine_day.name, routine_day.day_of_week)
+        )
+        new_day_data = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return RoutineDay(**new_day_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/routines/{routine_id}/days", response_model=List[RoutineDay])
+def get_routine_days(routine_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM routine_days WHERE routine_id = %s ORDER BY day_of_week", (routine_id,))
+        days_data = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return [RoutineDay(**d) for d in days_data]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- Routine Exercises ---
+
+@app.post("/routine_exercises/", response_model=RoutineExercise)
+def create_routine_exercise(routine_exercise: RoutineExercise):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            """INSERT INTO routine_exercises 
+               (routine_day_id, exercise_id, sequence, suggested_sets, suggested_reps, suggested_weight_percent, rest_period_seconds, group_name, tempo, suggested_time_seconds) 
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING *""",
+            (routine_exercise.routine_day_id, routine_exercise.exercise_id, routine_exercise.sequence, 
+             routine_exercise.suggested_sets, routine_exercise.suggested_reps, routine_exercise.suggested_weight_percent, routine_exercise.rest_period_seconds, routine_exercise.group_name, routine_exercise.tempo, routine_exercise.suggested_time_seconds)
+        )
+        new_re_data = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return RoutineExercise(**new_re_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/routine_days/{day_id}/exercises", response_model=List[RoutineExercise])
+def get_routine_day_exercises(day_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM routine_exercises WHERE routine_day_id = %s ORDER BY sequence", (day_id,))
+        re_data = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return [RoutineExercise(**re) for re in re_data]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/exercises/{exercise_id}/last_set")
+def get_last_set(exercise_id: int, set_number: int, current_workout_id: Optional[int] = None):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        
+        # Find the most recent workout for this exercise, excluding current workout
+        query = """
+            SELECT ws.weight_kg, ws.reps
+            FROM workout_sets ws
+            JOIN workout_exercises we ON ws.workout_exercise_id = we.id
+            JOIN workouts w ON we.workout_id = w.id
+            WHERE we.exercise_id = %s
+              AND ws.set_number = %s
+        """
+        params = [exercise_id, set_number]
+        
+        if current_workout_id:
+            query += " AND w.id != %s"
+            params.append(current_workout_id)
+            
+        query += " ORDER BY w.date DESC, w.start_time DESC LIMIT 1"
+        
+        cursor.execute(query, tuple(params))
+        data = cursor.fetchone()
+        
+        cursor.close()
+        conn.close()
+        
+        if data:
+            return {"weight_kg": data['weight_kg'], "reps": data['reps']}
+        return None
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+# --- Suggestions ---
+
+class SuggestedWorkoutResponse(BaseModel):
+    routine_name: str
+    day_name: str
+    exercises: List[ExerciseResponse]
+
+@app.get("/workouts/suggested", response_model=Optional[SuggestedWorkoutResponse])
+def get_suggested_workout(user_id: int = 1): # Hardcoded user_id for now
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        
+        # 1. Get current day of week (0=Monday, 6=Sunday)
+        # Note: Python's weekday() is 0-6 (Mon-Sun). Postgres extract(isodow) is 1-7 (Mon-Sun).
+        # We stored 0-6 in DB.
+        today_dow = date.today().weekday()
+        
+        # 2. Find a routine day for this user and day of week
+        # We assume the user has one active routine or we pick the latest created routine.
+        cursor.execute("""
+            SELECT rd.id as day_id, rd.name as day_name, r.name as routine_name
+            FROM routine_days rd
+            JOIN routines r ON rd.routine_id = r.id
+            WHERE r.user_id = %s AND rd.day_of_week = %s
+            ORDER BY r.id DESC
+            LIMIT 1
+        """, (user_id, today_dow))
+        
+        day_data = cursor.fetchone()
+        
+        if not day_data:
+            cursor.close()
+            conn.close()
+            return None
+            
+        # 3. Get exercises for this day
+        cursor.execute("""
+            SELECT re.exercise_id, e.name, re.group_name
+            FROM routine_exercises re
+            JOIN exercises e ON re.exercise_id = e.id
+            WHERE re.routine_day_id = %s
+            ORDER BY re.sequence
+        """, (day_data['day_id'],))
+        
+        exercises_data = cursor.fetchall()
+        
+        exercises_list = []
+        for ex in exercises_data:
+            # We need to fetch muscle groups for each exercise to match ExerciseResponse
+            cursor.execute("""
+                SELECT m.name
+                FROM exercise_muscles em
+                JOIN muscles m ON em.muscle_id = m.id
+                WHERE em.exercise_id = %s
+            """, (ex['exercise_id'],))
+            muscles = [m['name'] for m in cursor.fetchall()]
+            
+
+            exercises_list.append({
+                'id': ex['exercise_id'],
+                'name': ex['name'],
+                'muscle_group': muscles,
+                'sets': [], # No sets yet
+                'group_name': ex['group_name']
+            })
+            
+        cursor.close()
+        conn.close()
+        
+        return {
+            'routine_name': day_data['routine_name'],
+            'day_name': day_data['day_name'],
+            'exercises': exercises_list
+        }
+        
+    except Exception as e:
+        print(f"Error getting suggested workout: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/workouts/", response_model=Workout)
+def create_workout(workout: Workout):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            "INSERT INTO workouts (user_id, date, start_time, end_time, notes) VALUES (%s, %s, %s, %s, %s) RETURNING *",
+            (workout.user_id, workout.date, workout.start_time, workout.end_time, workout.notes)
+        )
+        new_workout_data = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return Workout(**new_workout_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/workouts/active", response_model=Optional[dict])
+def get_active_workout():
+    try:
+        conn = get_db_connection()
+
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        
+        # Find the most recent unfinished workout
+        cursor.execute("SELECT * FROM workouts WHERE user_id = 1 AND end_time IS NULL ORDER BY date DESC, start_time DESC LIMIT 1")
+        workout_data = cursor.fetchone()
+        
+        if not workout_data:
+            cursor.close()
+            conn.close()
+            return None
+            
+        workout = dict(workout_data)
+        
+        # Fetch exercises
+        cursor.execute("""
+            SELECT we.*, e.name as exercise_name, e.tracked_metrics, array_remove(array_agg(m.name), NULL) as muscle_group
+            FROM workout_exercises we
+            JOIN exercises e ON we.exercise_id = e.id
+            LEFT JOIN exercise_muscles em ON e.id = em.exercise_id
+            LEFT JOIN muscles m ON em.muscle_id = m.id
+            WHERE we.workout_id = %s
+            GROUP BY we.id, e.name, e.tracked_metrics
+            ORDER BY we.sequence
+        """, (workout['id'],))
+        
+        exercises_data = cursor.fetchall()
+        
+        exercises_list = []
+        for ex_data in exercises_data:
+            ex = dict(ex_data)
+            # Map flattened fields to nested structure if needed, or just use as is for Response
+            
+            # Fetch sets
+            cursor.execute("SELECT * FROM workout_sets WHERE workout_exercise_id = %s ORDER BY set_number", (ex['id'],))
+            sets_data = cursor.fetchall()
+            
+            # We need to construct the `Exercise` object inside `WorkoutExercise`
+            # Frontend: `WorkoutExercise` has `exercise: Exercise`.
+            
+            sets_list = [dict(s) for s in sets_data]
+            
+            full_ex_obj = {
+                "id": ex['exercise_id'],
+                "name": ex['exercise_name'],
+                "muscle_group": ex['muscle_group'] or [],
+                "tracked_metrics": ex['tracked_metrics']
+            }
+            
+            workout_exercise = {
+                "id": ex['id'],
+                "workout_id": ex['workout_id'],
+                "exercise_id": ex['exercise_id'],
+                "sequence": ex['sequence'],
+                "exercise": full_ex_obj,
+                "sets": sets_list
+            }
+            exercises_list.append(workout_exercise)
+            
+        workout['exercises'] = exercises_list
+        
+        cursor.close()
+        conn.close()
+        
+        return workout
+
+    except Exception as e:
+        print(f"Error getting active workout: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/workouts/{workout_id}/finish")
+def finish_workout(workout_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        current_time = datetime.now().time()
+        
+        cursor.execute(
+            "UPDATE workouts SET end_time = %s WHERE id = %s RETURNING id",
+            (current_time, workout_id)
+        )
+        
+        if cursor.fetchone() is None:
+            cursor.close()
+            conn.close()
+            raise HTTPException(status_code=404, detail="Workout not found")
+            
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"status": "success"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/workouts/{workout_id}", response_model=Workout)
+def get_workout(workout_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM workouts WHERE id = %s", (workout_id,))
+        workout_data = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if workout_data is None:
+            raise HTTPException(status_code=404, detail="Workout not found")
+        return Workout(**workout_data)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/workouts/", response_model=List[WorkoutResponse])
+def get_workouts():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        
+        # 1. Fetch Workouts
+        cursor.execute("SELECT * FROM workouts ORDER BY date DESC, start_time DESC")
+        workouts_data = cursor.fetchall()
+        
+        workouts_map = {}
+        for w in workouts_data:
+            w_dict = dict(w)
+            w_dict['exercises'] = []
+            workouts_map[w['id']] = w_dict
+
+        if not workouts_map:
+            return []
+
+        workout_ids = tuple(workouts_map.keys())
+        
+        # 2. Fetch Workout Exercises with Exercise Names
+        cursor.execute(f"""
+            SELECT we.id, we.workout_id, we.exercise_id, e.name, we.sequence
+            FROM workout_exercises we
+            JOIN exercises e ON we.exercise_id = e.id
+            WHERE we.workout_id IN %s
+            ORDER BY we.workout_id, we.sequence
+        """, (workout_ids,))
+        we_data = cursor.fetchall()
+        
+        we_map = {} # we_id -> we_dict
+        
+        # 3. Fetch Muscle Groups for all exercises involved
+        # Optimization: Get all exercise IDs first
+        exercise_ids = tuple(set(we['exercise_id'] for we in we_data))
+        exercise_muscles_map = {}
+        if exercise_ids:
+            cursor.execute(f"""
+                SELECT em.exercise_id, m.name
+                FROM exercise_muscles em
+                JOIN muscles m ON em.muscle_id = m.id
+                WHERE em.exercise_id IN %s
+            """, (exercise_ids,))
+            em_data = cursor.fetchall()
+            for em in em_data:
+                if em['exercise_id'] not in exercise_muscles_map:
+                    exercise_muscles_map[em['exercise_id']] = []
+                exercise_muscles_map[em['exercise_id']].append(em['name'])
+
+        for we in we_data:
+            we_dict = {
+                'id': we['exercise_id'], # Use exercise_id as id for frontend compatibility? Or we.id? Frontend uses it for lookup?
+                # The frontend uses `item.name` mostly.
+                'name': we['name'],
+                'muscle_group': exercise_muscles_map.get(we['exercise_id'], []),
+                'sets': [],
+                'we_id': we['id'] # Keep track of internal ID for sets mapping
+            }
+            we_map[we['id']] = we_dict
+            workouts_map[we['workout_id']]['exercises'].append(we_dict)
+
+        # 4. Fetch Sets
+        if we_map:
+            we_ids = tuple(we_map.keys())
+            cursor.execute(f"""
+                SELECT id, workout_exercise_id, set_number, reps, weight_kg, distance_m, duration_seconds, notes, completed
+                FROM workout_sets
+                WHERE workout_exercise_id IN %s
+                ORDER BY workout_exercise_id, set_number
+            """, (we_ids,))
+            sets_data = cursor.fetchall()
+            
+            for s in sets_data:
+                we_id = s['workout_exercise_id']
+                if we_id in we_map:
+                    we_map[we_id]['sets'].append({
+                        'id': s['id'],
+                        'set_number': s['set_number'],
+                        'weight_kg': s['weight_kg'], # Returning kg as weight
+                        'reps': s['reps'],
+                        'distance_m': s['distance_m'], # Alignment with frontend
+                        'duration_seconds': s['duration_seconds'], # Alignment with frontend
+                        'notes': s.get('notes'),
+                        'completed': s['completed'] or False
+                    })
+
+        cursor.close()
+        conn.close()
+        
+        # Convert map values to list
+        return [WorkoutResponse(**w) for w in workouts_map.values()]
+    except Exception as e:
+        print(f"Error getting workouts: {e}") # Add logging
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/workouts/{workout_id}", response_model=Workout)
+def update_workout(workout_id: int, workout: Workout):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            "UPDATE workouts SET user_id = %s, date = %s, start_time = %s, end_time = %s, notes = %s WHERE id = %s RETURNING *",
+            (workout.user_id, workout.date, workout.start_time, workout.end_time, workout.notes, workout_id)
+        )
+        updated_workout_data = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        if updated_workout_data is None:
+            raise HTTPException(status_code=404, detail="Workout not found")
+        return Workout(**updated_workout_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/workouts/{workout_id}", status_code=204)
+def delete_workout(workout_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # 1. Delete sets
+        cursor.execute("""
+            DELETE FROM workout_sets 
+            WHERE workout_exercise_id IN (
+                SELECT id FROM workout_exercises WHERE workout_id = %s
+            )
+        """, (workout_id,))
+        
+        # 2. Delete exercises
+        cursor.execute("DELETE FROM workout_exercises WHERE workout_id = %s", (workout_id,))
+        
+        # 3. Delete workout
+        cursor.execute("DELETE FROM workouts WHERE id = %s RETURNING id", (workout_id,))
+        deleted_id = cursor.fetchone()
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        if deleted_id is None:
+            raise HTTPException(status_code=404, detail="Workout not found")
+        return
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/workout_exercises/", response_model=WorkoutExercise)
+def create_workout_exercise(workout_exercise: WorkoutExercise):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            "INSERT INTO workout_exercises (workout_id, exercise_id, sequence) VALUES (%s, %s, %s) RETURNING *",
+            (workout_exercise.workout_id, workout_exercise.exercise_id, workout_exercise.sequence)
+        )
+        new_workout_exercise_data = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return WorkoutExercise(**new_workout_exercise_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/workout_exercises/{workout_exercise_id}", response_model=WorkoutExercise)
+def get_workout_exercise(workout_exercise_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM workout_exercises WHERE id = %s", (workout_exercise_id,))
+        workout_exercise_data = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if workout_exercise_data is None:
+            raise HTTPException(status_code=404, detail="Workout exercise not found")
+        return WorkoutExercise(**workout_exercise_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/workout_exercises/", response_model=List[WorkoutExercise])
+def get_workout_exercises():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM workout_exercises")
+        workout_exercises_data = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return [WorkoutExercise(**we) for we in workout_exercises_data]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/workout_exercises/{workout_exercise_id}", response_model=WorkoutExercise)
+def update_workout_exercise(workout_exercise_id: int, workout_exercise: WorkoutExercise):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            "UPDATE workout_exercises SET workout_id = %s, exercise_id = %s, sequence = %s WHERE id = %s RETURNING *",
+            (workout_exercise.workout_id, workout_exercise.exercise_id, workout_exercise.sequence, workout_exercise_id)
+        )
+        updated_workout_exercise_data = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        if updated_workout_exercise_data is None:
+            raise HTTPException(status_code=404, detail="Workout exercise not found")
+        return WorkoutExercise(**updated_workout_exercise_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/workout_exercises/{workout_exercise_id}", status_code=204)
+def delete_workout_exercise(workout_exercise_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM workout_exercises WHERE id = %s RETURNING id", (workout_exercise_id,))
+        deleted_id = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        if deleted_id is None:
+            raise HTTPException(status_code=404, detail="Workout exercise not found")
+        return
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/workout_sets/", response_model=WorkoutSet)
+def create_workout_set(workout_set: WorkoutSet):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            "INSERT INTO workout_sets (workout_exercise_id, set_number, reps, weight_kg, duration_seconds, distance_m, height_cm, tempo, notes, completed) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING *",
+            (workout_set.workout_exercise_id, workout_set.set_number, workout_set.reps, workout_set.weight_kg, workout_set.duration_seconds, workout_set.distance_m, workout_set.height_cm, workout_set.tempo, workout_set.notes, workout_set.completed)
+        )
+        new_workout_set_data = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return WorkoutSet(**new_workout_set_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/workout_sets/{workout_set_id}", response_model=WorkoutSet)
+def get_workout_set(workout_set_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM workout_sets WHERE id = %s", (workout_set_id,))
+        workout_set_data = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if workout_set_data is None:
+            raise HTTPException(status_code=404, detail="Workout set not found")
+        return WorkoutSet(**workout_set_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/workout_sets/", response_model=List[WorkoutSet])
+def get_workout_sets():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM workout_sets")
+        workout_sets_data = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return [WorkoutSet(**ws) for ws in workout_sets_data]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/workout_sets/{workout_set_id}", response_model=WorkoutSet)
+def update_workout_set(workout_set_id: int, workout_set: WorkoutSet):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            "UPDATE workout_sets SET workout_exercise_id = %s, set_number = %s, reps = %s, weight_kg = %s, duration_seconds = %s, distance_m = %s, height_cm = %s, tempo = %s, notes = %s, completed = %s WHERE id = %s RETURNING *",
+            (workout_set.workout_exercise_id, workout_set.set_number, workout_set.reps, workout_set.weight_kg, workout_set.duration_seconds, workout_set.distance_m, workout_set.height_cm, workout_set.tempo, workout_set.notes, workout_set.completed, workout_set_id)
+        )
+        updated_workout_set_data = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        if updated_workout_set_data is None:
+            raise HTTPException(status_code=404, detail="Workout set not found")
+        return WorkoutSet(**updated_workout_set_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/workout_sets/{workout_set_id}", status_code=204)
+def delete_workout_set(workout_set_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM workout_sets WHERE id = %s RETURNING id", (workout_set_id,))
+        deleted_id = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        if deleted_id is None:
+            raise HTTPException(status_code=404, detail="Workout set not found")
+        return
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/routine_exercises/", response_model=RoutineExercise)
+def create_routine_exercise(routine_exercise: RoutineExercise):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            "INSERT INTO routine_exercises (routine_id, exercise_id, sequence, suggested_sets, suggested_reps, suggested_weight_percent, rest_period_seconds) VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING *",
+            (routine_exercise.routine_id, routine_exercise.exercise_id, routine_exercise.sequence, routine_exercise.suggested_sets, routine_exercise.suggested_reps, routine_exercise.suggested_weight_percent, routine_exercise.rest_period_seconds)
+        )
+        new_routine_exercise_data = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return RoutineExercise(**new_routine_exercise_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/routine_exercises/{routine_exercise_id}", response_model=RoutineExercise)
+def get_routine_exercise(routine_exercise_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM routine_exercises WHERE id = %s", (routine_exercise_id,))
+        routine_exercise_data = cursor.fetchone()
+        cursor.close()
+        conn.close()
+        if routine_exercise_data is None:
+            raise HTTPException(status_code=404, detail="Routine exercise not found")
+        return RoutineExercise(**routine_exercise_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/routine_exercises/", response_model=List[RoutineExercise])
+def get_routine_exercises():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SELECT * FROM routine_exercises")
+        routine_exercises_data = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return [RoutineExercise(**re) for re in routine_exercises_data]
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.put("/routine_exercises/{routine_exercise_id}", response_model=RoutineExercise)
+def update_routine_exercise(routine_exercise_id: int, routine_exercise: RoutineExercise):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute(
+            "UPDATE routine_exercises SET routine_id = %s, exercise_id = %s, sequence = %s, suggested_sets = %s, suggested_reps = %s, suggested_weight_percent = %s, rest_period_seconds = %s WHERE id = %s RETURNING *",
+            (routine_exercise.routine_id, routine_exercise.exercise_id, routine_exercise.sequence, routine_exercise.suggested_sets, routine_exercise.suggested_reps, routine_exercise.suggested_weight_percent, routine_exercise.rest_period_seconds, routine_exercise_id)
+        )
+        updated_routine_exercise_data = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        if updated_routine_exercise_data is None:
+            raise HTTPException(status_code=404, detail="Routine exercise not found")
+        return RoutineExercise(**updated_routine_exercise_data)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/routine_exercises/{routine_exercise_id}", status_code=204)
+def delete_routine_exercise(routine_exercise_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM routine_exercises WHERE id = %s RETURNING id", (routine_exercise_id,))
+        deleted_id = cursor.fetchone()
+        conn.commit()
+        cursor.close()
+        conn.close()
+        if deleted_id is None:
+            raise HTTPException(status_code=404, detail="Routine exercise not found")
+        return
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

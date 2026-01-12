@@ -1,0 +1,2359 @@
+
+[
+  {
+    "date": "2025-07-28",
+    "exercises": [
+        {
+          "name": "Backward Walking",
+          "category": "ATG",
+          "type": "strength",
+          "muscle_group": ["Legs"],
+          "sets": [
+            {
+              "reps": 1
+            }
+          ],
+          "duration": 300
+        },
+      {
+        "name": "Pull-ups",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back",
+          "Biceps"
+        ],
+        "sets": [
+          {
+            "reps": 12,
+            "weight": -80
+          }
+        ],
+        "notes": "Assisted"
+      },
+      {
+        "name": "Split Squat",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Legs",
+          "Glutes"
+        ],
+        "sets": [
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          }
+        ],
+        "notes": "Per side (1R/1L), 6 in box"
+      },
+      {
+        "name": "L-Sit",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Core"
+        ],
+        "sets": [
+          {
+            "reps": 1,
+            "weight": 0
+          }
+        ],
+        "duration": 20,
+        "notes": "Isometric"
+      },
+      {
+        "name": "Back Extension",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back"
+        ],
+        "sets": [
+          {
+            "reps": 15,
+            "weight": 5
+          },
+          {
+            "reps": 15,
+            "weight": 5
+          }
+        ]
+      },
+      {
+        "name": "Dips",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Chest",
+          "Triceps"
+        ],
+        "sets": [
+          {
+            "reps": 8,
+            "weight": -80
+          }
+        ]
+      },
+      {
+        "superset": [
+          {
+            "name": "Calf Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Calves"],
+            "duration": 60,
+            "notes": "Per side (45°)"
+          },
+          {
+            "name": "Elephant Walks",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ]
+          },
+          {
+            "name": "Piriformis Push",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Glutes"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ],
+            "notes": "Per side"
+          },
+          {
+            "name": "Standing Pancake",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings", "Adductors"],
+            "duration": 30
+          },
+          {
+            "name": "Couch Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Quads", "Hips"],
+            "duration": 60,
+            "notes": "Per side"
+          }
+        ]
+      },
+      {
+        "name": "Straight Leg Calf Raise",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Calves"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 5
+          }
+        ],
+        "notes": "Per side",
+        "tempo": {
+          "down": 1,
+          "hold": 5,
+          "up": 0,
+          "pause": 1
+        }
+      },
+      {
+        "name": "Tib Bar",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Tibialis"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 25
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "date": "2025-08-04",
+    "exercises": [
+      {
+        "superset": [
+          {
+            "name": "Sled Push",
+            "category": "ATG",
+            "type": "strength",
+            "muscle_group": [],
+            "sets": [
+              {
+                "reps": 3,
+                "weight": 225,
+                "distance": "30 Yards"
+              }
+            ],
+            "notes": "No rest"
+          },
+          {
+            "name": "Backwards Sled Pull",
+            "category": "ATG",
+            "type": "strength",
+            "muscle_group": [],
+            "sets": [
+              {
+                "reps": 3,
+                "weight": 225,
+                "distance": "30 yards"
+              }
+            ],
+            "notes": "No rest"
+          }
+        ]
+      },
+      {
+        "name": "Pull-ups",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back",
+          "Biceps"
+        ],
+        "sets": [
+          {
+            "reps": 12,
+            "weight": -80
+          }
+        ],
+        "notes": "Assisted"
+      },
+      {
+        "name": "Split Squat",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Legs",
+          "Glutes"
+        ],
+        "sets": [
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          }
+        ],
+        "notes": "Per side (1R/1L), 6 in box"
+      },
+      {
+        "name": "L-Sit",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Core"
+        ],
+        "sets": [
+          {
+            "reps": 1,
+            "weight": 0
+          }
+        ],
+        "duration": 20,
+        "notes": "Isometric"
+      },
+      {
+        "name": "Back Extension",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back"
+        ],
+        "sets": [
+          {
+            "reps": 15,
+            "weight": 5
+          },
+          {
+            "reps": 15,
+            "weight": 5
+          }
+        ]
+      },
+      {
+        "name": "Dips",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Chest",
+          "Triceps"
+        ],
+        "sets": [
+          {
+            "reps": 8,
+            "weight": -80
+          }
+        ]
+      },
+      {
+        "superset": [
+          {
+            "name": "Calf Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Calves"],
+            "duration": 60,
+            "notes": "Per side (45°)"
+          },
+          {
+            "name": "Elephant Walks",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ]
+          },
+          {
+            "name": "Piriformis Push",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Glutes"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ],
+            "notes": "Per side"
+          },
+          {
+            "name": "Standing Pancake",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings", "Adductors"],
+            "duration": 30
+          },
+          {
+            "name": "Couch Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Quads", "Hips"],
+            "duration": 60,
+            "notes": "Per side"
+          }
+        ]
+      },
+      {
+        "name": "Straight Leg Calf Raise",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Calves"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 5
+          }
+        ],
+        "notes": "Per side",
+        "tempo": {
+          "down": 1,
+          "hold": 5,
+          "up": 0,
+          "pause": 1
+        }
+      },
+      {
+        "name": "Tib Bar",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Tibialis"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 25
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "date": "2025-08-11",
+    "exercises": [
+      {
+        "superset": [
+          {
+            "name": "Sled Push",
+            "category": "ATG",
+            "type": "strength",
+            "muscle_group": [],
+            "sets": [
+              {
+                "reps": 3,
+                "weight": 225,
+                "distance": "30 Yards"
+              }
+            ],
+            "notes": "No rest"
+          },
+          {
+            "name": "Backwards Sled Pull",
+            "category": "ATG",
+            "type": "strength",
+            "muscle_group": [],
+            "sets": [
+              {
+                "reps": 3,
+                "weight": 225,
+                "distance": "30 yards"
+              }
+            ],
+            "notes": "No rest"
+          }
+        ]
+      },
+      {
+        "name": "Pull-ups",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back",
+          "Biceps"
+        ],
+        "sets": [
+          {
+            "reps": 12,
+            "weight": -80
+          }
+        ],
+        "notes": "Assisted"
+      },
+      {
+        "name": "Split Squat",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Legs",
+          "Glutes"
+        ],
+        "sets": [
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          }
+        ],
+        "notes": "Per side (1R/1L), 6 in box"
+      },
+      {
+        "name": "L-Sit",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Core"
+        ],
+        "sets": [
+          {
+            "reps": 1,
+            "weight": 0
+          }
+        ],
+        "duration": 20,
+        "notes": "Isometric"
+      },
+      {
+        "name": "Back Extension",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back"
+        ],
+        "sets": [
+          {
+            "reps": 15,
+            "weight": 5
+          },
+          {
+            "reps": 15,
+            "weight": 5
+          }
+        ]
+      },
+      {
+        "name": "Dips",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Chest",
+          "Triceps"
+        ],
+        "sets": [
+          {
+            "reps": 8,
+            "weight": -80
+          }
+        ]
+      },
+      {
+        "superset": [
+          {
+            "name": "Calf Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Calves"],
+            "duration": 60,
+            "notes": "Per side (45°)"
+          },
+          {
+            "name": "Elephant Walks",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ]
+          },
+          {
+            "name": "Piriformis Push",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Glutes"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ],
+            "notes": "Per side"
+          },
+          {
+            "name": "Standing Pancake",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings", "Adductors"],
+            "duration": 30
+          },
+          {
+            "name": "Couch Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Quads", "Hips"],
+            "duration": 60,
+            "notes": "Per side"
+          }
+        ]
+      },
+      {
+        "name": "Straight Leg Calf Raise",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Calves"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 5
+          }
+        ],
+        "notes": "Per side",
+        "tempo": {
+          "down": 1,
+          "hold": 5,
+          "up": 0,
+          "pause": 1
+        }
+      },
+      {
+        "name": "Tib Bar",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Tibialis"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 25
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "date": "2025-08-18",
+    "exercises": [
+      {
+        "superset": [
+          {
+            "name": "Sled Push",
+            "category": "ATG",
+            "type": "strength",
+            "muscle_group": [],
+            "sets": [
+              {
+                "reps": 3,
+                "weight": 225,
+                "distance": "30 Yards"
+              }
+            ],
+            "notes": "No rest"
+          },
+          {
+            "name": "Backwards Sled Pull",
+            "category": "ATG",
+            "type": "strength",
+            "muscle_group": [],
+            "sets": [
+              {
+                "reps": 3,
+                "weight": 225,
+                "distance": "30 yards"
+              }
+            ],
+            "notes": "No rest"
+          }
+        ]
+      },
+      {
+        "name": "Pull-ups",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back",
+          "Biceps"
+        ],
+        "sets": [
+          {
+            "reps": 12,
+            "weight": -80
+          }
+        ],
+        "notes": "Assisted"
+      },
+      {
+        "name": "Split Squat",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Legs",
+          "Glutes"
+        ],
+        "sets": [
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          }
+        ],
+        "notes": "Per side (1R/1L), 6 in box"
+      },
+      {
+        "name": "L-Sit",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Core"
+        ],
+        "sets": [
+          {
+            "reps": 1,
+            "weight": 0
+          }
+        ],
+        "duration": 20,
+        "notes": "Isometric"
+      },
+      {
+        "name": "Back Extension",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back"
+        ],
+        "sets": [
+          {
+            "reps": 15,
+            "weight": 5
+          },
+          {
+            "reps": 15,
+            "weight": 5
+          }
+        ]
+      },
+      {
+        "name": "Dips",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Chest",
+          "Triceps"
+        ],
+        "sets": [
+          {
+            "reps": 8,
+            "weight": -80
+          }
+        ]
+      },
+      {
+        "superset": [
+          {
+            "name": "Calf Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Calves"],
+            "duration": 60,
+            "notes": "Per side (45°)"
+          },
+          {
+            "name": "Elephant Walks",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ]
+          },
+          {
+            "name": "Piriformis Push",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Glutes"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ],
+            "notes": "Per side"
+          },
+          {
+            "name": "Standing Pancake",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings", "Adductors"],
+            "duration": 30
+          },
+          {
+            "name": "Couch Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Quads", "Hips"],
+            "duration": 60,
+            "notes": "Per side"
+          }
+        ]
+      },
+      {
+        "name": "Straight Leg Calf Raise",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Calves"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 5
+          }
+        ],
+        "notes": "Per side",
+        "tempo": {
+          "down": 1,
+          "hold": 5,
+          "up": 0,
+          "pause": 1
+        }
+      },
+      {
+        "name": "Tib Bar",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Tibialis"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 25
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "date": "2025-08-25",
+    "exercises": [
+      {
+        "superset": [
+          {
+            "name": "Sled Push",
+            "category": "ATG",
+            "type": "strength",
+            "muscle_group": [],
+            "sets": [
+              {
+                "reps": 3,
+                "weight": 225,
+                "distance": "30 Yards"
+              }
+            ],
+            "notes": "No rest"
+          },
+          {
+            "name": "Backwards Sled Pull",
+            "category": "ATG",
+            "type": "strength",
+            "muscle_group": [],
+            "sets": [
+              {
+                "reps": 3,
+                "weight": 225,
+                "distance": "30 yards"
+              }
+            ],
+            "notes": "No rest"
+          }
+        ]
+      },
+      {
+        "name": "Pull-ups",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back",
+          "Biceps"
+        ],
+        "sets": [
+          {
+            "reps": 12,
+            "weight": -80
+          }
+        ],
+        "notes": "Assisted"
+      },
+      {
+        "name": "Split Squat",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Legs",
+          "Glutes"
+        ],
+        "sets": [
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          }
+        ],
+        "notes": "Per side (1R/1L), 6 in box"
+      },
+      {
+        "name": "L-Sit",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Core"
+        ],
+        "sets": [
+          {
+            "reps": 1,
+            "weight": 0
+          }
+        ],
+        "duration": 20,
+        "notes": "Isometric"
+      },
+      {
+        "name": "Back Extension",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back"
+        ],
+        "sets": [
+          {
+            "reps": 15,
+            "weight": 5
+          },
+          {
+            "reps": 15,
+            "weight": 5
+          }
+        ]
+      },
+      {
+        "name": "Dips",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Chest",
+          "Triceps"
+        ],
+        "sets": [
+          {
+            "reps": 8,
+            "weight": -80
+          }
+        ]
+      },
+      {
+        "superset": [
+          {
+            "name": "Calf Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Calves"],
+            "duration": 60,
+            "notes": "Per side (45°)"
+          },
+          {
+            "name": "Elephant Walks",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ]
+          },
+          {
+            "name": "Piriformis Push",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Glutes"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ],
+            "notes": "Per side"
+          },
+          {
+            "name": "Standing Pancake",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings", "Adductors"],
+            "duration": 30
+          },
+          {
+            "name": "Couch Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Quads", "Hips"],
+            "duration": 60,
+            "notes": "Per side"
+          }
+        ]
+      },
+      {
+        "name": "Straight Leg Calf Raise",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Calves"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 5
+          }
+        ],
+        "notes": "Per side",
+        "tempo": {
+          "down": 1,
+          "hold": 5,
+          "up": 0,
+          "pause": 1
+        }
+      },
+      {
+        "name": "Tib Bar",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Tibialis"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 25
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "date": "2025-09-01",
+    "exercises": [
+      {
+        "superset": [
+          {
+            "name": "Sled Push",
+            "category": "ATG",
+            "type": "strength",
+            "muscle_group": [],
+            "sets": [
+              {
+                "reps": 3,
+                "weight": 225,
+                "distance": "30 Yards"
+              }
+            ],
+            "notes": "No rest"
+          },
+          {
+            "name": "Backwards Sled Pull",
+            "category": "ATG",
+            "type": "strength",
+            "muscle_group": [],
+            "sets": [
+              {
+                "reps": 3,
+                "weight": 225,
+                "distance": "30 yards"
+              }
+            ],
+            "notes": "No rest"
+          }
+        ]
+      },
+      {
+        "name": "Pull-ups",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back",
+          "Biceps"
+        ],
+        "sets": [
+          {
+            "reps": 12,
+            "weight": -80
+          }
+        ],
+        "notes": "Assisted"
+      },
+      {
+        "name": "Split Squat",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Legs",
+          "Glutes"
+        ],
+        "sets": [
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          }
+        ],
+        "notes": "Per side (1R/1L), 6 in box"
+      },
+      {
+        "name": "L-Sit",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Core"
+        ],
+        "sets": [
+          {
+            "reps": 1,
+            "weight": 0
+          }
+        ],
+        "duration": 20,
+        "notes": "Isometric"
+      },
+      {
+        "name": "Back Extension",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back"
+        ],
+        "sets": [
+          {
+            "reps": 15,
+            "weight": 5
+          },
+          {
+            "reps": 15,
+            "weight": 5
+          }
+        ]
+      },
+      {
+        "name": "Dips",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Chest",
+          "Triceps"
+        ],
+        "sets": [
+          {
+            "reps": 8,
+            "weight": -80
+          }
+        ]
+      },
+      {
+        "superset": [
+          {
+            "name": "Calf Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Calves"],
+            "duration": 60,
+            "notes": "Per side (45°)"
+          },
+          {
+            "name": "Elephant Walks",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ]
+          },
+          {
+            "name": "Piriformis Push",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Glutes"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ],
+            "notes": "Per side"
+          },
+          {
+            "name": "Standing Pancake",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings", "Adductors"],
+            "duration": 30
+          },
+          {
+            "name": "Couch Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Quads", "Hips"],
+            "duration": 60,
+            "notes": "Per side"
+          }
+        ]
+      },
+      {
+        "name": "Straight Leg Calf Raise",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Calves"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 5
+          }
+        ],
+        "notes": "Per side",
+        "tempo": {
+          "down": 1,
+          "hold": 5,
+          "up": 0,
+          "pause": 1
+        }
+      },
+      {
+        "name": "Tib Bar",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Tibialis"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 25
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "date": "2025-09-08",
+    "exercises": [
+      {
+        "superset": [
+          {
+            "name": "Sled Push",
+            "category": "ATG",
+            "type": "strength",
+            "muscle_group": [],
+            "sets": [
+              {
+                "reps": 3,
+                "weight": 225,
+                "distance": "30 Yards"
+              }
+            ],
+            "notes": "No rest"
+          },
+          {
+            "name": "Backwards Sled Pull",
+            "category": "ATG",
+            "type": "strength",
+            "muscle_group": [],
+            "sets": [
+              {
+                "reps": 3,
+                "weight": 225,
+                "distance": "30 yards"
+              }
+            ],
+            "notes": "No rest"
+          }
+        ]
+      },
+      {
+        "name": "Pull-ups",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back",
+          "Biceps"
+        ],
+        "sets": [
+          {
+            "reps": 12,
+            "weight": -80
+          }
+        ],
+        "notes": "Assisted"
+      },
+      {
+        "name": "Split Squat",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Legs",
+          "Glutes"
+        ],
+        "sets": [
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          }
+        ],
+        "notes": "Per side (1R/1L), 6 in box"
+      },
+      {
+        "name": "L-Sit",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Core"
+        ],
+        "sets": [
+          {
+            "reps": 1,
+            "weight": 0
+          }
+        ],
+        "duration": 20,
+        "notes": "Isometric"
+      },
+      {
+        "name": "Back Extension",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back"
+        ],
+        "sets": [
+          {
+            "reps": 15,
+            "weight": 5
+          },
+          {
+            "reps": 15,
+            "weight": 5
+          }
+        ]
+      },
+      {
+        "name": "Dips",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Chest",
+          "Triceps"
+        ],
+        "sets": [
+          {
+            "reps": 8,
+            "weight": -80
+          }
+        ]
+      },
+      {
+        "superset": [
+          {
+            "name": "Calf Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Calves"],
+            "duration": 60,
+            "notes": "Per side (45°)"
+          },
+          {
+            "name": "Elephant Walks",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ]
+          },
+          {
+            "name": "Piriformis Push",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Glutes"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ],
+            "notes": "Per side"
+          },
+          {
+            "name": "Standing Pancake",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings", "Adductors"],
+            "duration": 30
+          },
+          {
+            "name": "Couch Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Quads", "Hips"],
+            "duration": 60,
+            "notes": "Per side"
+          }
+        ]
+      },
+      {
+        "name": "Straight Leg Calf Raise",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Calves"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 5
+          }
+        ],
+        "notes": "Per side",
+        "tempo": {
+          "down": 1,
+          "hold": 5,
+          "up": 0,
+          "pause": 1
+        }
+      },
+      {
+        "name": "Tib Bar",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Tibialis"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 25
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "date": "2025-09-15",
+    "exercises": [
+      {
+        "superset": [
+          {
+            "name": "Sled Push",
+            "category": "ATG",
+            "type": "strength",
+            "muscle_group": [],
+            "sets": [
+              {
+                "reps": 3,
+                "weight": 225,
+                "distance": "30 Yards"
+              }
+            ],
+            "notes": "No rest"
+          },
+          {
+            "name": "Backwards Sled Pull",
+            "category": "ATG",
+            "type": "strength",
+            "muscle_group": [],
+            "sets": [
+              {
+                "reps": 3,
+                "weight": 225,
+                "distance": "30 yards"
+              }
+            ],
+            "notes": "No rest"
+          }
+        ]
+      },
+      {
+        "name": "Pull-ups",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back",
+          "Biceps"
+        ],
+        "sets": [
+          {
+            "reps": 12,
+            "weight": -80
+          }
+        ],
+        "notes": "Assisted"
+      },
+      {
+        "name": "Split Squat",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Legs",
+          "Glutes"
+        ],
+        "sets": [
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          }
+        ],
+        "notes": "Per side (1R/1L), 6 in box"
+      },
+      {
+        "name": "L-Sit",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Core"
+        ],
+        "sets": [
+          {
+            "reps": 1,
+            "weight": 0
+          }
+        ],
+        "duration": 20,
+        "notes": "Isometric"
+      },
+      {
+        "name": "Back Extension",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back"
+        ],
+        "sets": [
+          {
+            "reps": 15,
+            "weight": 5
+          },
+          {
+            "reps": 15,
+            "weight": 5
+          }
+        ]
+      },
+      {
+        "name": "Dips",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Chest",
+          "Triceps"
+        ],
+        "sets": [
+          {
+            "reps": 8,
+            "weight": -80
+          }
+        ]
+      },
+      {
+        "superset": [
+          {
+            "name": "Calf Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Calves"],
+            "duration": 60,
+            "notes": "Per side (45°)"
+          },
+          {
+            "name": "Elephant Walks",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ]
+          },
+          {
+            "name": "Piriformis Push",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Glutes"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ],
+            "notes": "Per side"
+          },
+          {
+            "name": "Standing Pancake",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings", "Adductors"],
+            "duration": 30
+          },
+          {
+            "name": "Couch Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Quads", "Hips"],
+            "duration": 60,
+            "notes": "Per side"
+          }
+        ]
+      },
+      {
+        "name": "Straight Leg Calf Raise",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Calves"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 5
+          }
+        ],
+        "notes": "Per side",
+        "tempo": {
+          "down": 1,
+          "hold": 5,
+          "up": 0,
+          "pause": 1
+        }
+      },
+      {
+        "name": "Tib Bar",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Tibialis"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 25
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "date": "2025-09-22",
+    "exercises": [
+      {
+        "superset": [
+          {
+            "name": "Sled Push",
+            "category": "ATG",
+            "type": "strength",
+            "muscle_group": [],
+            "sets": [
+              {
+                "reps": 3,
+                "weight": 225,
+                "distance": "30 Yards"
+              }
+            ],
+            "notes": "No rest"
+          },
+          {
+            "name": "Backwards Sled Pull",
+            "category": "ATG",
+            "type": "strength",
+            "muscle_group": [],
+            "sets": [
+              {
+                "reps": 3,
+                "weight": 225,
+                "distance": "30 yards"
+              }
+            ],
+            "notes": "No rest"
+          }
+        ]
+      },
+      {
+        "name": "Pull-ups",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back",
+          "Biceps"
+        ],
+        "sets": [
+          {
+            "reps": 12,
+            "weight": -80
+          }
+        ],
+        "notes": "Assisted"
+      },
+      {
+        "name": "Split Squat",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Legs",
+          "Glutes"
+        ],
+        "sets": [
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          }
+        ],
+        "notes": "Per side (1R/1L), 6 in box"
+      },
+      {
+        "name": "L-Sit",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Core"
+        ],
+        "sets": [
+          {
+            "reps": 1,
+            "weight": 0
+          }
+        ],
+        "duration": 20,
+        "notes": "Isometric"
+      },
+      {
+        "name": "Back Extension",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back"
+        ],
+        "sets": [
+          {
+            "reps": 15,
+            "weight": 5
+          },
+          {
+            "reps": 15,
+            "weight": 5
+          }
+        ]
+      },
+      {
+        "name": "Dips",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Chest",
+          "Triceps"
+        ],
+        "sets": [
+          {
+            "reps": 8,
+            "weight": -80
+          }
+        ]
+      },
+      {
+        "superset": [
+          {
+            "name": "Calf Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Calves"],
+            "duration": 60,
+            "notes": "Per side (45°)"
+          },
+          {
+            "name": "Elephant Walks",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ]
+          },
+          {
+            "name": "Piriformis Push",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Glutes"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ],
+            "notes": "Per side"
+          },
+          {
+            "name": "Standing Pancake",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings", "Adductors"],
+            "duration": 30
+          },
+          {
+            "name": "Couch Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Quads", "Hips"],
+            "duration": 60,
+            "notes": "Per side"
+          }
+        ]
+      },
+      {
+        "name": "Straight Leg Calf Raise",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Calves"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 5
+          }
+        ],
+        "notes": "Per side",
+        "tempo": {
+          "down": 1,
+          "hold": 5,
+          "up": 0,
+          "pause": 1
+        }
+      },
+      {
+        "name": "Tib Bar",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Tibialis"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 25
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "date": "2025-09-29",
+    "exercises": [
+      {
+        "superset": [
+          {
+            "name": "Sled Push",
+            "category": "ATG",
+            "type": "strength",
+            "muscle_group": [],
+            "sets": [
+              {
+                "reps": 3,
+                "weight": 225,
+                "distance": "30 Yards"
+              }
+            ],
+            "notes": "No rest"
+          },
+          {
+            "name": "Backwards Sled Pull",
+            "category": "ATG",
+            "type": "strength",
+            "muscle_group": [],
+            "sets": [
+              {
+                "reps": 3,
+                "weight": 225,
+                "distance": "30 yards"
+              }
+            ],
+            "notes": "No rest"
+          }
+        ]
+      },
+      {
+        "name": "Pull-ups",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back",
+          "Biceps"
+        ],
+        "sets": [
+          {
+            "reps": 12,
+            "weight": -80
+          }
+        ],
+        "notes": "Assisted"
+      },
+      {
+        "name": "Split Squat",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Legs",
+          "Glutes"
+        ],
+        "sets": [
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "6 in"
+          }
+        ],
+        "notes": "Per side (1R/1L), 6 in box"
+      },
+      {
+        "name": "L-Sit",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Core"
+        ],
+        "sets": [
+          {
+            "reps": 1,
+            "weight": 0
+          }
+        ],
+        "duration": 20,
+        "notes": "Isometric"
+      },
+      {
+        "name": "Back Extension",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back"
+        ],
+        "sets": [
+          {
+            "reps": 15,
+            "weight": 5
+          },
+          {
+            "reps": 15,
+            "weight": 5
+          }
+        ]
+      },
+      {
+        "name": "Dips",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Chest",
+          "Triceps"
+        ],
+        "sets": [
+          {
+            "reps": 8,
+            "weight": -80
+          }
+        ]
+      },
+      {
+        "superset": [
+          {
+            "name": "Calf Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Calves"],
+            "duration": 60,
+            "notes": "Per side (45°)"
+          },
+          {
+            "name": "Elephant Walks",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ]
+          },
+          {
+            "name": "Piriformis Push",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Glutes"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ],
+            "notes": "Per side"
+          },
+          {
+            "name": "Standing Pancake",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings", "Adductors"],
+            "duration": 30
+          },
+          {
+            "name": "Couch Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Quads", "Hips"],
+            "duration": 60,
+            "notes": "Per side"
+          }
+        ]
+      },
+      {
+        "name": "Straight Leg Calf Raise",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Calves"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 5
+          }
+        ],
+        "notes": "Per side",
+        "tempo": {
+          "down": 1,
+          "hold": 5,
+          "up": 0,
+          "pause": 1
+        }
+      },
+      {
+        "name": "Tib Bar",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Tibialis"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 25
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "date": "2025-10-12",
+    "exercises": [
+      {
+        "superset": [
+          {
+            "name": "Sled Push",
+            "category": "ATG",
+            "type": "strength",
+            "muscle_group": [],
+            "sets": [
+              {
+                "reps": 3,
+                "weight": 225,
+                "distance": "30 Yards"
+              }
+            ],
+            "notes": "No rest"
+          },
+          {
+            "name": "Backwards Sled Pull",
+            "category": "ATG",
+            "type": "strength",
+            "muscle_group": [],
+            "sets": [
+              {
+                "reps": 3,
+                "weight": 225,
+                "distance": "30 yards"
+              }
+            ],
+            "notes": "No rest"
+          }
+        ]
+      },
+      {
+        "name": "Pull-ups",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back",
+          "Biceps"
+        ],
+        "sets": [
+          {
+            "reps": 12,
+            "weight": -80
+          }
+        ],
+        "notes": "Assisted"
+      },
+      {
+        "name": "Split Squat",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Legs",
+          "Glutes"
+        ],
+        "sets": [
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "18 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "18 in"
+          },
+          {
+            "reps": 10,
+            "weight": 0,
+            "height": "18 in"
+          }
+        ],
+        "notes": "Per side (1R/1L), 18 in box, tournament recovery"
+      },
+      {
+        "name": "L-Sit",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Core"
+        ],
+        "sets": [
+          {
+            "reps": 1,
+            "weight": 0
+          }
+        ],
+        "duration": 20,
+        "notes": "Isometric"
+      },
+      {
+        "name": "Back Extension",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Back"
+        ],
+        "sets": [
+          {
+            "reps": 15,
+            "weight": 5
+          },
+          {
+            "reps": 15,
+            "weight": 5
+          }
+        ]
+      },
+      {
+        "name": "Dips",
+        "category": "ATG",
+        "type": "strength",
+        "muscle_group": [
+          "Chest",
+          "Triceps"
+        ],
+        "sets": [
+          {
+            "reps": 8,
+            "weight": -80
+          }
+        ]
+      },
+      {
+        "superset": [
+          {
+            "name": "Calf Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Calves"],
+            "duration": 60,
+            "notes": "Per side (45°)"
+          },
+          {
+            "name": "Elephant Walks",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ]
+          },
+          {
+            "name": "Piriformis Push",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Glutes"],
+            "sets": [
+              {
+                "reps": 20,
+                "weight": 0
+              }
+            ],
+            "notes": "Per side"
+          },
+          {
+            "name": "Standing Pancake",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Hamstrings", "Adductors"],
+            "duration": 30
+          },
+          {
+            "name": "Couch Stretch",
+            "category": "PNF",
+            "type": "flexibility",
+            "muscle_group": ["Quads", "Hips"],
+            "duration": 60,
+            "notes": "Per side"
+          }
+        ]
+      },
+      {
+        "name": "Straight Leg Calf Raise",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Calves"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 5
+          }
+        ],
+        "notes": "Per side",
+        "tempo": {
+          "down": 1,
+          "hold": 5,
+          "up": 0,
+          "pause": 1
+        }
+      },
+      {
+        "name": "Tib Bar",
+        "category": "Lower Leg",
+        "type": "strength",
+        "muscle_group": [
+          "Tibialis"
+        ],
+        "sets": [
+          {
+            "reps": 20,
+            "weight": 25
+          }
+        ]
+      }
+    ]
+  }
+]

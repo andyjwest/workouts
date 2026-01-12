@@ -1,0 +1,134 @@
+import React, { useState } from 'react';
+import type { Exercise, WorkoutExercise, WorkoutSet } from '../types';
+import SetLogger from './SetLogger';
+import { Plus, MoreVertical } from 'lucide-react';
+import { api } from '../api';
+
+interface ExerciseCardProps {
+    workoutExercise: WorkoutExercise;
+    exercise: Exercise;
+    onUpdate?: (updatedExercise: WorkoutExercise) => void;
+}
+
+const ExerciseCard: React.FC<ExerciseCardProps> = ({ workoutExercise, exercise, onUpdate }) => {
+    const [sets, setSets] = useState<WorkoutSet[]>(workoutExercise.sets || []);
+
+    const updateParent = (newSets: WorkoutSet[]) => {
+        if (onUpdate) {
+            onUpdate({
+                ...workoutExercise,
+                sets: newSets
+            });
+        }
+    };
+
+    const addSet = () => {
+        const lastSet = sets.length > 0 ? sets[sets.length - 1] : null;
+
+        // Optimistically add a new set
+        const newSet: WorkoutSet = {
+            id: 0, // Temp ID
+            workout_exercise_id: workoutExercise.id,
+            set_number: sets.length + 1,
+            // Inherit properties for continuity
+            weight_kg: lastSet?.weight_kg,
+            reps: lastSet?.reps,
+            duration_seconds: lastSet?.duration_seconds,
+            tempo: lastSet?.tempo
+        };
+        const newSets = [...sets, newSet];
+        setSets(newSets);
+        updateParent(newSets);
+    };
+
+    const handleSetSave = (savedSet: WorkoutSet) => {
+        const newSets = sets.map(s => s.set_number === savedSet.set_number ? savedSet : s);
+
+        // Auto-forward weight to next set if it's empty
+        const currentIndex = sets.findIndex(s => s.set_number === savedSet.set_number);
+        if (currentIndex !== -1 && currentIndex < sets.length - 1) {
+            const nextSet = newSets[currentIndex + 1];
+            if (!nextSet.weight_kg && savedSet.weight_kg) {
+                // Creates a new object for the next set with weight populated
+                // Note: we don't save this to DB yet, just update local state 
+                // so the user sees it pre-filled in the next row
+                newSets[currentIndex + 1] = {
+                    ...nextSet,
+                    weight_kg: savedSet.weight_kg
+                };
+            }
+        }
+
+        setSets(newSets);
+        updateParent(newSets);
+    };
+
+    const handleSetDelete = async (index: number) => {
+        const setToDelete = sets[index];
+        if (setToDelete.id !== 0) {
+            try {
+                await api.delete(`/workout_sets/${setToDelete.id}`);
+            } catch (err) {
+                console.error("Failed to delete set", err);
+                return;
+            }
+        }
+        const newSets = sets.filter((_, i) => i !== index).map((s, i) => ({ ...s, set_number: i + 1 }));
+        setSets(newSets);
+        updateParent(newSets);
+    };
+
+    return (
+        <div className="bg-slate-950 border border-slate-800 rounded-2xl overflow-hidden flex flex-col h-full">
+            {/* Header */}
+            <div className="p-5 bg-slate-900 border-b border-slate-800 flex justify-between items-start">
+                <div>
+                    <h2 className="text-2xl font-bold text-white mb-1">{exercise.name}</h2>
+                    <div className="flex gap-2">
+                        <span className="text-sm text-sky-400 font-medium">{exercise.group_name || 'Main Lift'}</span>
+                        {exercise.muscle_group?.map(m => (
+                            <span key={m} className="text-xs bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full border border-slate-700">{m}</span>
+                        ))}
+                    </div>
+                </div>
+                <button className="text-slate-400 hover:text-white p-2">
+                    <MoreVertical size={20} />
+                </button>
+            </div>
+
+            {/* Sets List */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {sets.map((set, index) => (
+                    <SetLogger
+                        key={index}
+                        workoutExerciseId={workoutExercise.id}
+                        exerciseId={exercise.id}
+                        setNumber={index + 1}
+                        initialData={set}
+                        trackedMetrics={exercise.tracked_metrics ? exercise.tracked_metrics.split(',') : undefined}
+                        onSave={handleSetSave}
+                        onDelete={() => handleSetDelete(index)}
+                    />
+                ))}
+
+                <button
+                    onClick={addSet}
+                    className="w-full py-4 border-2 border-dashed border-slate-800 rounded-xl text-slate-500 hover:text-sky-400 hover:border-sky-500/30 hover:bg-sky-500/5 transition-all flex items-center justify-center gap-2 font-bold"
+                >
+                    <Plus size={20} />
+                    Add Set
+                </button>
+            </div>
+
+            {/* Footer / Notes */}
+            <div className="p-4 bg-slate-900 border-t border-slate-800">
+                <textarea
+                    placeholder="Exercise notes..."
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-3 text-sm text-slate-300 placeholder-slate-600 outline-none focus:border-sky-500/50 transition-colors resize-none h-20"
+                />
+            </div>
+        </div>
+    );
+};
+
+export default ExerciseCard;
