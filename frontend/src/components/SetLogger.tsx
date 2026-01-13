@@ -25,7 +25,7 @@ const SetLogger: React.FC<SetLoggerProps> = ({
     initialData,
     trackedMetrics = ['weight', 'reps'] // Default
 }) => {
-    const { convertWeight, toKg, unitLabel } = useUserPreferences();
+    const { convertWeight, toKg, unitLabel, convertHeight, toCm, heightUnitLabel } = useUserPreferences();
 
     // Initialize weight: Convert initial KG to preferred unit for display
     const [weight, setWeight] = useState(() => {
@@ -37,6 +37,11 @@ const SetLogger: React.FC<SetLoggerProps> = ({
     const [rpe, setRpe] = useState(initialData?.rpe?.toString() || '');
     const [tempo, setTempo] = useState(initialData?.tempo || '');
     const [duration, setDuration] = useState(initialData?.duration_seconds?.toString() || '');
+    const [height, setHeight] = useState(() => {
+        if (!initialData?.height_cm) return '';
+        const converted = convertHeight(initialData.height_cm);
+        return converted ? converted.toString() : '';
+    });
     const [isSaved, setIsSaved] = useState(!!(initialData && initialData.id));
     const [isCompleted, setIsCompleted] = useState(initialData?.completed || false);
     const [history, setHistory] = useState<{ weight: number, reps: number } | null>(null);
@@ -62,7 +67,11 @@ const SetLogger: React.FC<SetLoggerProps> = ({
         if (initialData?.duration_seconds && !duration && !isCompleted) {
             setDuration(initialData.duration_seconds.toString());
         }
-    }, [initialData?.weight_kg, initialData?.duration_seconds]);
+        if (initialData?.height_cm && !height && !isCompleted) {
+            const converted = convertHeight(initialData.height_cm);
+            if (converted) setHeight(converted.toString());
+        }
+    }, [initialData?.weight_kg, initialData?.duration_seconds, initialData?.height_cm]);
 
     const loadHistory = async () => {
         try {
@@ -93,6 +102,7 @@ const SetLogger: React.FC<SetLoggerProps> = ({
     const showRpe = trackedMetrics.includes('rpe');
     const showTempo = trackedMetrics.includes('tempo');
     const showTime = trackedMetrics.includes('time');
+    const showHeight = trackedMetrics.includes('height');
 
     // Start Save Logic
     const handleSave = async () => {
@@ -103,6 +113,7 @@ const SetLogger: React.FC<SetLoggerProps> = ({
         // if (showWeight && !weight && !isTimedSet) error = true; 
         if (showReps && !reps && !isTimedSet) error = true;
         if (showTime && !duration) error = true;
+        if (showHeight && !height) error = true;
 
         if (error) {
             setHasError(true);
@@ -124,7 +135,8 @@ const SetLogger: React.FC<SetLoggerProps> = ({
                 rpe: rpe ? parseFloat(rpe) : undefined,
                 tempo: tempo || undefined,
                 completed: newCompletedState,
-                duration_seconds: duration ? parseInt(duration) : undefined
+                duration_seconds: duration ? parseInt(duration) : undefined,
+                height_cm: height ? (toCm(parseFloat(height)) ?? undefined) : undefined
             };
 
             let savedSet: WorkoutSet;
@@ -229,6 +241,25 @@ const SetLogger: React.FC<SetLoggerProps> = ({
                     </div>
                 )}
 
+                {showHeight && (
+                    <div className="flex-1 min-w-[80px]">
+                        <div className="relative">
+                            <input
+                                type="number"
+                                step="0.5"
+                                placeholder={heightUnitLabel}
+                                value={height}
+                                onChange={(e) => { setHeight(e.target.value); setIsSaved(false); setIsCompleted(false); setHasError(false); }}
+                                className={clsx(
+                                    "w-full bg-slate-950 border rounded-lg px-3 py-2 text-white text-center focus:ring-1 focus:ring-sky-500 outline-none",
+                                    hasError && !height ? "border-red-500 placeholder-red-300" :
+                                        isCompleted ? "border-green-500/30 text-green-100 placeholder-green-700" : "border-slate-800"
+                                )}
+                            />
+                        </div>
+                    </div>
+                )}
+
                 {showRpe && (
                     <div className="w-16 flex-shrink-0">
                         <input
@@ -278,7 +309,7 @@ const SetLogger: React.FC<SetLoggerProps> = ({
                         <Trash2 size={18} />
                     </button>
                 </div>
-            </div>
+            </div >
 
             {showTempo && !isCompleted && !isTimedSet && (
                 <div className="mt-1 pl-12 flex items-center gap-2">

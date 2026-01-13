@@ -4,7 +4,7 @@ import RoutineManager from './components/RoutineManager';
 import DataImporter from './components/DataImporter';
 import clsx from 'clsx';
 import { useUserPreferences } from './context/UserPreferencesContext';
-import { Ruler, Database } from 'lucide-react';
+import { Ruler } from 'lucide-react';
 
 const ManagementView: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'exercises' | 'routines' | 'import'>('exercises');

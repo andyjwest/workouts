@@ -9,6 +9,9 @@ interface UserPreferencesContextType {
     formatWeight: (kg: number | undefined | null) => string;
     toKg: (weight: number | undefined | null) => number | null;
     unitLabel: string;
+    convertHeight: (cm: number | undefined | null) => number | null;
+    toCm: (height: number | undefined | null) => number | null;
+    heightUnitLabel: string;
 }
 
 const UserPreferencesContext = createContext<UserPreferencesContextType | undefined>(undefined);
@@ -48,6 +51,20 @@ export const UserPreferencesProvider: React.FC<{ children: ReactNode }> = ({ chi
     };
 
     const unitLabel = unitSystem === 'metric' ? 'kg' : 'lbs';
+    const heightUnitLabel = unitSystem === 'metric' ? 'cm' : 'in';
+
+    const convertHeight = (cm: number | undefined | null): number | null => {
+        if (cm === undefined || cm === null) return null;
+        if (unitSystem === 'metric') return cm;
+        // 1 in = 2.54 cm
+        return parseFloat((cm / 2.54).toFixed(1));
+    };
+
+    const toCm = (height: number | undefined | null): number | null => {
+        if (height === undefined || height === null) return null;
+        if (unitSystem === 'metric') return height;
+        return parseFloat((height * 2.54).toFixed(2));
+    };
 
     return (
         <UserPreferencesContext.Provider value={{
@@ -56,7 +73,10 @@ export const UserPreferencesProvider: React.FC<{ children: ReactNode }> = ({ chi
             convertWeight,
             formatWeight,
             toKg,
-            unitLabel
+            unitLabel,
+            convertHeight,
+            toCm,
+            heightUnitLabel
         }}>
             {children}
         </UserPreferencesContext.Provider>

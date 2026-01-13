@@ -1372,21 +1372,73 @@ def reopen_workout(workout_id: int):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/workouts/{workout_id}", response_model=Workout)
+@app.get("/workouts/{workout_id}", response_model=None)
 def get_workout(workout_id: int):
     try:
         conn = get_db_connection()
         cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         cursor.execute("SELECT * FROM workouts WHERE id = %s", (workout_id,))
         workout_data = cursor.fetchone()
+        
+        if workout_data is None:
+            cursor.close()
+            conn.close()
+            raise HTTPException(status_code=404, detail="Workout not found")
+            
+        workout = dict(workout_data)
+        
+        # Borrowed logic from get_active_workout to populate full tree
+        # Fetch exercises
+        cursor.execute("""
+            SELECT we.*, e.name as exercise_name, e.tracked_metrics, array_remove(array_agg(m.name), NULL) as muscle_group
+            FROM workout_exercises we
+            JOIN exercises e ON we.exercise_id = e.id
+            LEFT JOIN exercise_muscles em ON e.id = em.exercise_id
+            LEFT JOIN muscles m ON em.muscle_id = m.id
+            WHERE we.workout_id = %s
+            GROUP BY we.id, e.name, e.tracked_metrics
+            ORDER BY we.sequence
+        """, (workout['id'],))
+        
+        exercises_data = cursor.fetchall()
+        
+        exercises_list = []
+        for ex_data in exercises_data:
+            ex = dict(ex_data)
+            
+            # Fetch sets
+            cursor.execute("SELECT * FROM workout_sets WHERE workout_exercise_id = %s ORDER BY set_number", (ex['id'],))
+            sets_data = cursor.fetchall()
+            
+            sets_list = [dict(s) for s in sets_data]
+            
+            # Construct Exercise object inside WorkoutExercise
+            full_ex_obj = {
+                "id": ex['exercise_id'],
+                "name": ex['exercise_name'],
+                "muscle_group": ex['muscle_group'] or [],
+                "tracked_metrics": ex['tracked_metrics']
+            }
+            
+            workout_exercise = {
+                "id": ex['id'],
+                "workout_id": ex['workout_id'],
+                "exercise_id": ex['exercise_id'],
+                "sequence": ex['sequence'],
+                "exercise": full_ex_obj,
+                "sets": sets_list
+            }
+            exercises_list.append(workout_exercise)
+
+        workout['exercises'] = exercises_list
+
         cursor.close()
         conn.close()
-        if workout_data is None:
-            raise HTTPException(status_code=404, detail="Workout not found")
-        return Workout(**workout_data)
+        return workout
     except HTTPException:
         raise
     except Exception as e:
+        print(f"Error getting workout: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/workouts/", response_model=List[WorkoutResponse])
@@ -1633,14 +1685,45 @@ def delete_workout_exercise(workout_exercise_id: int):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
+        
+        # 1. Delete associated sets first
+        cursor.execute("DELETE FROM workout_sets WHERE workout_exercise_id = %s", (workout_exercise_id,))
+        
+        # 2. Delete the exercise
         cursor.execute("DELETE FROM workout_exercises WHERE id = %s RETURNING id", (workout_exercise_id,))
         deleted_id = cursor.fetchone()
+        
         conn.commit()
         cursor.close()
         conn.close()
+        
         if deleted_id is None:
             raise HTTPException(status_code=404, detail="Workout exercise not found")
         return
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+class ReorderRequest(BaseModel):
+    workout_exercise_ids: List[int]
+
+@app.post("/workouts/{workout_id}/reorder")
+def reorder_workout_exercises(workout_id: int, request: ReorderRequest):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Verify all belong to the workout? 
+        # For simplicity, we just update the sequence for the given IDs if they exist.
+        for i, we_id in enumerate(request.workout_exercise_ids):
+            cursor.execute(
+                "UPDATE workout_exercises SET sequence = %s WHERE id = %s AND workout_id = %s",
+                (i + 1, we_id, workout_id)
+            )
+            
+        conn.commit()
+        cursor.close()
+        conn.close()
+        return {"status": "success"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

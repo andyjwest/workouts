@@ -1,16 +1,18 @@
 import React from 'react';
-import { X, Clock, Trophy, Trash2 } from 'lucide-react';
+import { X, Clock, Trophy, Trash2, Pencil } from 'lucide-react';
 import type { Workout } from '../types';
 import { format, parseISO } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 
 interface WorkoutDetailModalProps {
     workout: Workout;
     onClose: () => void;
     onDelete: (id: number) => void;
-    onReopen: (workout: Workout) => void;
 }
 
-const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({ workout, onClose, onDelete, onReopen }) => {
+const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({ workout, onClose, onDelete }) => {
+    const navigate = useNavigate();
+
     // Re-calculate basic stats
     let totalVolume = 0;
     let totalSets = 0;
@@ -25,6 +27,11 @@ const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({ workout, onClos
         if (confirm('Are you sure you want to delete this workout? This cannot be undone.')) {
             onDelete(workout.id);
         }
+    };
+
+    const handleEdit = () => {
+        navigate(`/workout/${workout.id}`);
+        onClose();
     };
 
     return (
@@ -86,10 +93,10 @@ const WorkoutDetailModal: React.FC<WorkoutDetailModalProps> = ({ workout, onClos
                     </button>
                     <div className="flex gap-2">
                         <button
-                            onClick={() => onReopen(workout)}
-                            className="text-sky-400 hover:text-sky-300 font-medium px-4 py-2 hover:bg-sky-500/10 rounded-lg transition-colors border border-sky-500/30"
+                            onClick={handleEdit}
+                            className="text-sky-400 hover:text-sky-300 font-medium px-4 py-2 hover:bg-sky-500/10 rounded-lg transition-colors border border-sky-500/30 flex items-center gap-2"
                         >
-                            Reopen
+                            <Pencil size={16} /> Edit
                         </button>
                         <button
                             onClick={onClose}

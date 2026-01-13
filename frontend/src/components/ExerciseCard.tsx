@@ -1,17 +1,22 @@
 import React, { useState } from 'react';
 import type { Exercise, WorkoutExercise, WorkoutSet } from '../types';
 import SetLogger from './SetLogger';
-import { Plus, MoreVertical } from 'lucide-react';
+import { Plus, MoreVertical, Trash2, RefreshCw, ArrowUp, ArrowDown } from 'lucide-react';
 import { api } from '../api';
 
 interface ExerciseCardProps {
     workoutExercise: WorkoutExercise;
     exercise: Exercise;
     onUpdate?: (updatedExercise: WorkoutExercise) => void;
+    onDelete?: () => void;
+    onSwap?: () => void;
+    onMoveUp?: () => void;
+    onMoveDown?: () => void;
 }
 
-const ExerciseCard: React.FC<ExerciseCardProps> = ({ workoutExercise, exercise, onUpdate }) => {
+const ExerciseCard: React.FC<ExerciseCardProps> = ({ workoutExercise, exercise, onUpdate, onDelete, onSwap, onMoveUp, onMoveDown }) => {
     const [sets, setSets] = useState<WorkoutSet[]>(workoutExercise.sets || []);
+    const [showMenu, setShowMenu] = useState(false);
 
     const updateParent = (newSets: WorkoutSet[]) => {
         if (onUpdate) {
@@ -91,9 +96,49 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({ workoutExercise, exercise, 
                         ))}
                     </div>
                 </div>
-                <button className="text-slate-400 hover:text-white p-2">
-                    <MoreVertical size={20} />
-                </button>
+                <div className="relative">
+                    <button
+                        className="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition-colors"
+                        onClick={() => setShowMenu(!showMenu)}
+                    >
+                        <MoreVertical size={20} />
+                    </button>
+                    {showMenu && (
+                        <>
+                            <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
+                            <div className="absolute right-0 top-full mt-2 w-56 bg-slate-900 border border-slate-700 rounded-xl shadow-xl z-20 overflow-hidden py-1 ring-1 ring-black/50">
+                                {onMoveUp && (
+                                    <button
+                                        onClick={() => { setShowMenu(false); onMoveUp(); }}
+                                        className="w-full text-left px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white flex items-center gap-3 transition-colors"
+                                    >
+                                        <ArrowUp size={16} className="text-sky-400" /> Move Up
+                                    </button>
+                                )}
+                                {onMoveDown && (
+                                    <button
+                                        onClick={() => { setShowMenu(false); onMoveDown(); }}
+                                        className="w-full text-left px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white flex items-center gap-3 transition-colors border-b border-slate-800"
+                                    >
+                                        <ArrowDown size={16} className="text-sky-400" /> Move Down
+                                    </button>
+                                )}
+                                <button
+                                    onClick={() => { setShowMenu(false); onSwap?.(); }}
+                                    className="w-full text-left px-4 py-3 text-slate-300 hover:bg-slate-800 hover:text-white flex items-center gap-3 transition-colors"
+                                >
+                                    <RefreshCw size={16} /> Swap Exercise
+                                </button>
+                                <button
+                                    onClick={() => { setShowMenu(false); onDelete?.(); }}
+                                    className="w-full text-left px-4 py-3 text-red-500 hover:bg-red-500/10 hover:text-red-400 flex items-center gap-3 transition-colors"
+                                >
+                                    <Trash2 size={16} /> Delete Exercise
+                                </button>
+                            </div>
+                        </>
+                    )}
+                </div>
             </div>
 
             {/* Sets List */}

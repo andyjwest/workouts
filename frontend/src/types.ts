@@ -58,6 +58,7 @@ export interface WorkoutSet {
     notes?: string;
     completed?: boolean;
     duration_seconds?: number;
+    height_cm?: number;
 }
 
 export interface WorkoutExercise {

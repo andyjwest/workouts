@@ -13,6 +13,7 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Navigate to="/workout" replace />} />
           <Route path="workout" element={<InGymView />} />
+          <Route path="workout/:id" element={<InGymView />} />
           <Route path="management" element={<ManagementView />} />
           <Route path="history" element={<HistoryView />} />
           <Route path="reports" element={<ReportsView />} />

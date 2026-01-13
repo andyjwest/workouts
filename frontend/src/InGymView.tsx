@@ -3,10 +3,14 @@ import { api } from './api';
 import type { Workout, WorkoutExercise, Exercise } from './types';
 import ExerciseCard from './components/ExerciseCard';
 import RestTimer from './components/RestTimer';
-import { ChevronLeft, ChevronRight, Play, CheckCircle2, ChevronDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, CheckCircle2, ChevronDown, Save, Plus } from 'lucide-react';
 import clsx from 'clsx';
+import { useParams, useNavigate } from 'react-router-dom';
+import AddExerciseModal from './components/AddExerciseModal';
 
 const InGymView: React.FC = () => {
+    const { id } = useParams<{ id: string }>();
+    const navigate = useNavigate();
     const [activeWorkout, setActiveWorkout] = useState<Workout | null>(null);
     const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
     const [isLoading, setIsLoading] = useState(false);
@@ -14,33 +18,42 @@ const InGymView: React.FC = () => {
     const [suggestedWorkout, setSuggestedWorkout] = useState<any | null>(null);
     const [routineSchedule, setRoutineSchedule] = useState<any[]>([]); // Use any[] for now or RoutineDayResponse[] if imported
     const [showMobileList, setShowMobileList] = useState(false);
+    const [showAddExercise, setShowAddExercise] = useState(false);
+    const [swapTargetId, setSwapTargetId] = useState<number | null>(null);
+    const [searchFilter, setSearchFilter] = useState('');
 
     // Load active workout on mount (if any)
     React.useEffect(() => {
         const init = async () => {
             setIsLoading(true);
             try {
-                // 1. Check for active (unfinished) workout
-                const active = await api.get<Workout | null>('/workouts/active');
-                if (active) {
-                    setActiveWorkout(active);
-                    // Find first incomplete exercise to jump to
-                    if (active.exercises) {
-                        const firstIncompleteIdx = active.exercises.findIndex(ex =>
-                            !ex.sets || !ex.sets.every(s => s.completed)
-                        );
-                        if (firstIncompleteIdx !== -1) {
-                            setCurrentExerciseIndex(firstIncompleteIdx);
-                        }
-                    }
+                if (id) {
+                    // Edit Mode: Load specific workout
+                    const workout = await api.get<Workout>(`/workouts/${id}`);
+                    setActiveWorkout(workout);
                 } else {
-                    // 2. If no active workout, load suggestion and schedule
-                    const [suggestion, schedule] = await Promise.all([
-                        api.get<any>('/workouts/suggested'),
-                        api.get<any[]>('/routines/active/schedule')
-                    ]);
-                    setSuggestedWorkout(suggestion);
-                    setRoutineSchedule(schedule || []);
+                    // Normal Mode: Check for active (unfinished) workout
+                    const active = await api.get<Workout | null>('/workouts/active');
+                    if (active) {
+                        setActiveWorkout(active);
+                        // Find first incomplete exercise to jump to
+                        if (active.exercises) {
+                            const firstIncompleteIdx = active.exercises.findIndex(ex =>
+                                !ex.sets || !ex.sets.every(s => s.completed)
+                            );
+                            if (firstIncompleteIdx !== -1) {
+                                setCurrentExerciseIndex(firstIncompleteIdx);
+                            }
+                        }
+                    } else {
+                        // If no active workout, load suggestion and schedule
+                        const [suggestion, schedule] = await Promise.all([
+                            api.get<any>('/workouts/suggested'),
+                            api.get<any[]>('/routines/active/schedule')
+                        ]);
+                        setSuggestedWorkout(suggestion);
+                        setRoutineSchedule(schedule || []);
+                    }
                 }
             } catch (err) {
                 console.log("Error initializing workout view", err);
@@ -49,7 +62,7 @@ const InGymView: React.FC = () => {
             }
         };
         init();
-    }, []);
+    }, [id]);
 
     // Helper to start a routine day
     const startRoutineDay = async (dayData: any) => {
@@ -152,6 +165,14 @@ const InGymView: React.FC = () => {
 
     const finishWorkout = async () => {
         if (!activeWorkout) return;
+
+        if (id) {
+            // Edit Mode: Should we do anything specific?
+            // Maybe just navigate back to history?
+            navigate('/history');
+            return;
+        }
+
         try {
             await api.put(`/workouts/${activeWorkout.id}/finish`, {});
             setActiveWorkout(null);
@@ -281,6 +302,140 @@ const InGymView: React.FC = () => {
         return ex.sets && ex.sets.length > 0 && ex.sets.every(s => s.completed);
     };
 
+
+    const handleDeleteExercise = async (workoutExerciseId: number) => {
+        if (!activeWorkout || !confirm("Are you sure? This will delete the exercise and its sets.")) return;
+        setIsLoading(true);
+        try {
+            await api.delete(`/workout_exercises/${workoutExerciseId}`);
+            const newExercises = activeWorkout.exercises!.filter(e => e.id !== workoutExerciseId);
+            setActiveWorkout({ ...activeWorkout, exercises: newExercises });
+
+            // Adjust index if needed
+            if (currentExerciseIndex >= newExercises.length) {
+                setCurrentExerciseIndex(Math.max(0, newExercises.length - 1));
+            }
+        } catch (err) {
+            console.error("Failed to delete exercise", err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const startSwap = (workoutExercise: WorkoutExercise) => {
+        setSwapTargetId(workoutExercise.id!);
+        // Use the first muscle group as a filter helper
+        const filter = workoutExercise.exercise?.muscle_group?.[0] || '';
+        setSearchFilter(filter);
+        setShowAddExercise(true);
+    };
+
+    const openAddExercise = () => {
+        setSwapTargetId(null);
+        setSearchFilter('');
+        setShowAddExercise(true);
+    };
+
+    const handleAddOrSwapExercise = async (exercise: Exercise) => {
+        if (!activeWorkout) return;
+        setIsLoading(true);
+        try {
+            if (swapTargetId) {
+                // Swap Logic
+                const target = activeWorkout.exercises?.find(e => e.id === swapTargetId);
+                if (!target) return;
+
+                const updated = await api.put<WorkoutExercise>(`/workout_exercises/${swapTargetId}`, {
+                    workout_id: activeWorkout.id,
+                    exercise_id: exercise.id,
+                    sequence: target.sequence,
+                });
+
+                // Construct new object preserving sets
+                const newEx: WorkoutExercise = {
+                    ...updated,
+                    exercise: exercise,
+                    sets: target.sets,
+                };
+
+                const newExercises = activeWorkout.exercises!.map(e => e.id === swapTargetId ? newEx : e);
+                setActiveWorkout({ ...activeWorkout, exercises: newExercises });
+            } else {
+                // Add Logic
+                // Calculate next sequence
+                const currentMaxSequence = activeWorkout.exercises && activeWorkout.exercises.length > 0
+                    ? Math.max(...activeWorkout.exercises.map(e => e.sequence))
+                    : 0;
+
+                const we = await api.post<WorkoutExercise>('/workout_exercises/', {
+                    workout_id: activeWorkout.id,
+                    exercise_id: exercise.id,
+                    sequence: currentMaxSequence + 1
+                });
+
+                // Populate the full exercise object for display
+                we.exercise = exercise;
+                we.sets = []; // Start with no sets
+
+                const newExercises = [...(activeWorkout.exercises || []), we];
+                setActiveWorkout({ ...activeWorkout, exercises: newExercises });
+
+                // Switch to the new exercise
+                setCurrentExerciseIndex(newExercises.length - 1);
+            }
+
+            // Cleanup
+            setSwapTargetId(null);
+            setShowAddExercise(false);
+            setShowMobileList(false);
+
+        } catch (err) {
+            console.error("Failed to add/swap exercise", err);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleReorderExercise = async (direction: 'up' | 'down') => {
+        if (!activeWorkout || !activeWorkout.exercises) return;
+
+        const currentIndex = currentExerciseIndex;
+        const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+
+        // Bounds check
+        if (newIndex < 0 || newIndex >= activeWorkout.exercises.length) return;
+
+        setIsLoading(true);
+        try {
+            // Create a copy of the exercises array
+            const exercises = [...activeWorkout.exercises];
+
+            // Swap in local state
+            const temp = exercises[currentIndex];
+            exercises[currentIndex] = exercises[newIndex];
+            exercises[newIndex] = temp;
+
+            // Update sequence numbers locally
+            exercises.forEach((ex, idx) => {
+                ex.sequence = idx + 1;
+            });
+
+            // Optimistic update
+            setActiveWorkout({ ...activeWorkout, exercises });
+            setCurrentExerciseIndex(newIndex);
+
+            // Send new order to backend
+            const reorderIds = exercises.map(ex => ex.id!);
+            await api.post(`/workouts/${activeWorkout.id}/reorder`, { workout_exercise_ids: reorderIds });
+
+        } catch (err) {
+            console.error("Failed to reorder exercises", err);
+            // Revert state if needed? For now we just log error.
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const currentExercise = activeWorkout.exercises?.[currentExerciseIndex];
     const isCurrentComplete = currentExercise ? isExerciseComplete(currentExercise) : false;
 
@@ -289,7 +444,7 @@ const InGymView: React.FC = () => {
             {/* Top Bar */}
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h1 className="text-xl font-bold text-white">Active Workout</h1>
+                    <h1 className="text-xl font-bold text-white">{id ? 'Editing Workout' : 'Active Workout'}</h1>
                     <span className="text-sm text-slate-400 lg:hidden">
                         {currentExerciseIndex + 1} of {activeWorkout.exercises?.length} Exercises
                     </span>
@@ -322,34 +477,54 @@ const InGymView: React.FC = () => {
                                 </button>
                             );
                         })}
+                        <button
+                            onClick={openAddExercise}
+                            className="w-full text-left p-3 rounded-xl hover:bg-slate-800 text-slate-400 hover:text-sky-400 border border-transparent border-dashed hover:border-slate-700 transition-all flex items-center gap-2 group mt-2"
+                        >
+                            <div className="w-6 h-6 rounded-lg bg-slate-800 group-hover:bg-sky-500/10 flex items-center justify-center transition-colors">
+                                <Plus size={14} />
+                            </div>
+                            <span className="font-medium">Add Exercise</span>
+                        </button>
                     </div>
                     <div className="p-4 border-t border-slate-800">
                         <button
                             onClick={finishWorkout}
-                            className="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-colors"
+                            className={clsx(
+                                "w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-colors",
+                                id
+                                    ? "bg-sky-500 hover:bg-sky-600 text-white"
+                                    : "bg-green-500 hover:bg-green-600 text-white"
+                            )}
                         >
-                            Finish Workout <CheckCircle2 size={20} />
+                            {id ? (
+                                <>Save & Close <Save size={20} /></>
+                            ) : (
+                                <>Finish Workout <CheckCircle2 size={20} /></>
+                            )}
                         </button>
-                        <button
-                            onClick={async () => {
-                                if (!activeWorkout) return;
-                                if (confirm("Are you sure you want to discard this workout? This cannot be undone.")) {
-                                    try {
-                                        await api.delete(`/workouts/${activeWorkout.id}`);
-                                        setActiveWorkout(null);
-                                        setCurrentExerciseIndex(0);
-                                        // Reload suggestion
-                                        const suggestion = await api.get<any>('/workouts/suggested');
-                                        setSuggestedWorkout(suggestion);
-                                    } catch (err) {
-                                        console.error("Failed to discard workout", err);
+                        {!id && (
+                            <button
+                                onClick={async () => {
+                                    if (!activeWorkout) return;
+                                    if (confirm("Are you sure you want to discard this workout? This cannot be undone.")) {
+                                        try {
+                                            await api.delete(`/workouts/${activeWorkout.id}`);
+                                            setActiveWorkout(null);
+                                            setCurrentExerciseIndex(0);
+                                            // Reload suggestion
+                                            const suggestion = await api.get<any>('/workouts/suggested');
+                                            setSuggestedWorkout(suggestion);
+                                        } catch (err) {
+                                            console.error("Failed to discard workout", err);
+                                        }
                                     }
-                                }
-                            }}
-                            className="w-full mt-3 py-3 text-red-500 hover:text-red-400 hover:bg-slate-800 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors text-sm"
-                        >
-                            Discard Workout
-                        </button>
+                                }}
+                                className="w-full mt-3 py-3 text-red-500 hover:text-red-400 hover:bg-slate-800 rounded-xl font-medium flex items-center justify-center gap-2 transition-colors text-sm"
+                            >
+                                Discard Workout
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -362,6 +537,10 @@ const InGymView: React.FC = () => {
                                 workoutExercise={currentExercise}
                                 exercise={currentExercise.exercise}
                                 onUpdate={handleExerciseUpdate}
+                                onDelete={() => handleDeleteExercise(currentExercise.id!)}
+                                onSwap={() => startSwap(currentExercise)}
+                                onMoveUp={currentExerciseIndex > 0 ? () => handleReorderExercise('up') : undefined}
+                                onMoveDown={currentExerciseIndex < (activeWorkout.exercises?.length || 0) - 1 ? () => handleReorderExercise('down') : undefined}
                             />
                         ) : (
                             <div className="flex items-center justify-center h-full text-slate-500">
@@ -411,7 +590,7 @@ const InGymView: React.FC = () => {
                                         : "bg-slate-800 text-slate-400"
                                 )}
                             >
-                                Finish <CheckCircle2 size={20} />
+                                {id ? <Save size={20} /> : <CheckCircle2 size={20} />}
                             </button>
                         ) : (
                             <button
@@ -434,54 +613,79 @@ const InGymView: React.FC = () => {
             </div>
 
             {/* Mobile List Drawer Overlay */}
-            {showMobileList && (
-                <div className="fixed inset-0 z-50 lg:hidden flex flex-col">
-                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowMobileList(false)}></div>
-                    <div className="absolute bottom-0 left-0 w-full max-h-[80vh] bg-slate-900 rounded-t-3xl flex flex-col shadow-2xl border-t border-slate-800 animate-in slide-in-from-bottom duration-200">
-                        <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 rounded-t-3xl">
-                            <h3 className="font-bold text-white text-lg">Workout Plan</h3>
-                            <button onClick={() => setShowMobileList(false)} className="p-2 text-slate-400 hover:text-white">
-                                <ChevronDown size={24} />
-                            </button>
-                        </div>
-                        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-                            {activeWorkout.exercises?.map((ex, idx) => {
-                                const isComplete = isExerciseComplete(ex);
-                                return (
+            {
+                showMobileList && (
+                    <div className="fixed inset-0 z-50 lg:hidden flex flex-col">
+                        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setShowMobileList(false)}></div>
+                        <div className="absolute bottom-0 left-0 w-full max-h-[80vh] bg-slate-900 rounded-t-3xl flex flex-col shadow-2xl border-t border-slate-800 animate-in slide-in-from-bottom duration-200">
+                            <div className="p-4 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 rounded-t-3xl">
+                                <h3 className="font-bold text-white text-lg">Workout Plan</h3>
+                                <button onClick={() => setShowMobileList(false)} className="p-2 text-slate-400 hover:text-white">
+                                    <ChevronDown size={24} />
+                                </button>
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                                {activeWorkout.exercises?.map((ex, idx) => {
+                                    const isComplete = isExerciseComplete(ex);
+                                    return (
+                                        <button
+                                            key={ex.id}
+                                            onClick={() => { setCurrentExerciseIndex(idx); setShowMobileList(false); }}
+                                            className={clsx(
+                                                "w-full text-left p-4 rounded-xl transition-all flex items-center justify-between",
+                                                idx === currentExerciseIndex
+                                                    ? "bg-sky-500/10 text-sky-400 border border-sky-500/20"
+                                                    : "bg-slate-950 text-slate-300 border border-slate-800"
+                                            )}
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                <span className={clsx(
+                                                    "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
+                                                    idx === currentExerciseIndex ? "bg-sky-500 text-white" : "bg-slate-800 text-slate-500"
+                                                )}>{idx + 1}</span>
+                                                <span className={clsx("font-medium", isComplete && idx !== currentExerciseIndex && "text-slate-500")}>{ex.exercise?.name}</span>
+                                            </div>
+                                            {isComplete && <CheckCircle2 size={18} className="text-green-500" />}
+                                        </button>
+                                    );
+                                })}
+                                <div className="pt-2 pb-4">
                                     <button
-                                        key={ex.id}
-                                        onClick={() => { setCurrentExerciseIndex(idx); setShowMobileList(false); }}
+                                        onClick={openAddExercise}
+                                        className="w-full py-4 bg-slate-800/50 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl font-bold flex items-center justify-center gap-2 border border-dashed border-slate-700 hover:border-slate-500 transition-all"
+                                    >
+                                        <Plus size={20} /> Add Exercise
+                                    </button>
+                                </div>
+                                <div className="pt-0">
+                                    <button
+                                        onClick={finishWorkout}
                                         className={clsx(
-                                            "w-full text-left p-4 rounded-xl transition-all flex items-center justify-between",
-                                            idx === currentExerciseIndex
-                                                ? "bg-sky-500/10 text-sky-400 border border-sky-500/20"
-                                                : "bg-slate-950 text-slate-300 border border-slate-800"
+                                            "w-full py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 border border-slate-700",
+                                            id && "bg-sky-600 hover:bg-sky-500 text-white"
                                         )}
                                     >
-                                        <div className="flex items-center gap-3">
-                                            <span className={clsx(
-                                                "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold",
-                                                idx === currentExerciseIndex ? "bg-sky-500 text-white" : "bg-slate-800 text-slate-500"
-                                            )}>{idx + 1}</span>
-                                            <span className={clsx("font-medium", isComplete && idx !== currentExerciseIndex && "text-slate-500")}>{ex.exercise?.name}</span>
-                                        </div>
-                                        {isComplete && <CheckCircle2 size={18} className="text-green-500" />}
+                                        {id ? "Save & Close" : "Finish Workout"}
                                     </button>
-                                );
-                            })}
-                            <div className="pt-4">
-                                <button
-                                    onClick={finishWorkout}
-                                    className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-bold flex items-center justify-center gap-2 border border-slate-700"
-                                >
-                                    Finish Workout
-                                </button>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            )}
-        </div>
+                )
+            }
+
+
+            {/* Add Exercise Modal */}
+            {
+                showAddExercise && (
+                    <AddExerciseModal
+                        onClose={() => setShowAddExercise(false)}
+                        onSelect={handleAddOrSwapExercise}
+                        initialSearchTerm={searchFilter}
+                    />
+                )
+            }
+        </div >
     );
 };
 
