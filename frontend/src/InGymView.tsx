@@ -187,88 +187,90 @@ const InGymView: React.FC = () => {
 
     if (!activeWorkout) {
         return (
-            <div className="flex flex-col items-center justify-center h-full p-8 text-center max-w-2xl mx-auto w-full">
+            <div className="h-full w-full overflow-y-auto">
+                <div className="flex flex-col items-center justify-center min-h-full p-4 md:p-8 text-center max-w-2xl mx-auto w-full">
 
-                {suggestedWorkout ? (
-                    <div className="w-full bg-gradient-to-br from-indigo-900/50 to-slate-900 border border-indigo-500/30 p-8 rounded-3xl mb-8 relative overflow-hidden group">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-sky-500 to-indigo-500"></div>
-                        <h2 className="text-sm font-bold text-indigo-400 uppercase tracking-widest mb-1">Up Next</h2>
-                        <h3 className="text-3xl font-extrabold text-white mb-2">{suggestedWorkout.routine_name}</h3>
-                        <div className="text-xl text-indigo-200 mb-6 font-medium">{suggestedWorkout.day_name}</div>
+                    {suggestedWorkout ? (
+                        <div className="w-full bg-gradient-to-br from-indigo-900/50 to-slate-900 border border-indigo-500/30 p-8 rounded-3xl mb-8 relative overflow-hidden group">
+                            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-sky-500 to-indigo-500"></div>
+                            <h2 className="text-sm font-bold text-indigo-400 uppercase tracking-widest mb-1">Up Next</h2>
+                            <h3 className="text-3xl font-extrabold text-white mb-2">{suggestedWorkout.routine_name}</h3>
+                            <div className="text-xl text-indigo-200 mb-6 font-medium">{suggestedWorkout.day_name}</div>
 
-                        <div className="flex flex-wrap justify-center gap-2 mb-8">
-                            {suggestedWorkout.exercises.slice(0, 5).map((ex: any) => (
-                                <span key={ex.id} className="text-xs bg-slate-800/80 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700">
-                                    {ex.name}
-                                </span>
-                            ))}
-                            {suggestedWorkout.exercises.length > 5 && (
-                                <span className="text-xs bg-slate-800/80 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700">
-                                    +{suggestedWorkout.exercises.length - 5} more
-                                </span>
-                            )}
-                        </div>
-
-                        <button
-                            onClick={() => startRoutineDay(suggestedWorkout)}
-                            disabled={isLoading}
-                            className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-4 px-8 rounded-xl text-lg transition-all transform hover:scale-[1.02] shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-2"
-                        >
-                            <Play size={24} fill="currentColor" /> Start Workout
-                        </button>
-                    </div>
-                ) : (
-                    <div className="bg-slate-900 p-8 rounded-full mb-6 ring-4 ring-slate-800">
-                        <Play size={48} className="text-sky-500 ml-2" />
-                    </div>
-                )}
-
-                {/* Start Empty Workout Button - Moved up */}
-                <button
-                    onClick={startWorkout}
-                    disabled={isLoading}
-                    className="w-full max-w-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-3 px-6 rounded-xl transition-all border border-slate-700 mb-8"
-                >
-                    {isLoading ? 'Starting...' : 'Start Empty Workout'}
-                </button>
-
-                {/* Other Schedule Options */}
-                {routineSchedule.length > 0 && (
-                    <div className="w-full max-w-2xl mb-8">
-                        <h3 className="text-slate-400 text-sm font-bold uppercase tracking-widest mb-3 pl-1">Other Workouts</h3>
-                        <div className="flex flex-col gap-4">
-                            {routineSchedule
-                                .filter(day => !suggestedWorkout || day.name !== suggestedWorkout.day_name) // Filter active one if needed
-                                .map((day) => (
-                                    <button
-                                        key={day.id}
-                                        onClick={() => startRoutineDay(day)}
-                                        className="w-full bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-indigo-500/50 p-4 rounded-xl text-left transition-all group"
-                                    >
-                                        <div className="text-slate-200 font-bold mb-1 truncate">{day.name}</div>
-                                        <div className="text-xs text-slate-500 mb-3">{day.exercises.length} Exercises</div>
-                                        <div className="flex -space-x-1.5 overflow-hidden">
-                                            {day.exercises.slice(0, 3).map((ex: any) => (
-                                                <div key={ex.id} className="w-5 h-5 rounded-full bg-slate-700 border border-slate-800 flex items-center justify-center text-[8px] text-slate-300">
-                                                    {ex.name[0]}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </button>
+                            <div className="flex flex-wrap justify-center gap-2 mb-8">
+                                {suggestedWorkout.exercises.slice(0, 5).map((ex: any) => (
+                                    <span key={ex.id} className="text-xs bg-slate-800/80 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700">
+                                        {ex.name}
+                                    </span>
                                 ))}
+                                {suggestedWorkout.exercises.length > 5 && (
+                                    <span className="text-xs bg-slate-800/80 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700">
+                                        +{suggestedWorkout.exercises.length - 5} more
+                                    </span>
+                                )}
+                            </div>
+
+                            <button
+                                onClick={() => startRoutineDay(suggestedWorkout)}
+                                disabled={isLoading}
+                                className="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-4 px-8 rounded-xl text-lg transition-all transform hover:scale-[1.02] shadow-xl shadow-indigo-500/20 flex items-center justify-center gap-2"
+                            >
+                                <Play size={24} fill="currentColor" /> Start Workout
+                            </button>
                         </div>
-                    </div>
-                )}
+                    ) : (
+                        <div className="bg-slate-900 p-8 rounded-full mb-6 ring-4 ring-slate-800">
+                            <Play size={48} className="text-sky-500 ml-2" />
+                        </div>
+                    )}
 
-                {!suggestedWorkout && (
-                    <>
-                        <h1 className="text-3xl font-bold text-white mb-2">Ready to Train?</h1>
-                        <p className="text-slate-400 mb-8 max-w-md">
-                            Select a routine from the Management view or start a quick workout right here.
-                        </p>
-                    </>
-                )}
+                    {/* Start Empty Workout Button - Moved up */}
+                    <button
+                        onClick={startWorkout}
+                        disabled={isLoading}
+                        className="w-full max-w-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium py-3 px-6 rounded-xl transition-all border border-slate-700 mb-8"
+                    >
+                        {isLoading ? 'Starting...' : 'Start Empty Workout'}
+                    </button>
 
+                    {/* Other Schedule Options */}
+                    {routineSchedule.length > 0 && (
+                        <div className="w-full max-w-2xl mb-8">
+                            <h3 className="text-slate-400 text-sm font-bold uppercase tracking-widest mb-3 pl-1">Other Workouts</h3>
+                            <div className="flex flex-col gap-4">
+                                {routineSchedule
+                                    .filter(day => !suggestedWorkout || day.name !== suggestedWorkout.day_name) // Filter active one if needed
+                                    .map((day) => (
+                                        <button
+                                            key={day.id}
+                                            onClick={() => startRoutineDay(day)}
+                                            className="w-full bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-indigo-500/50 p-4 rounded-xl text-left transition-all group"
+                                        >
+                                            <div className="text-slate-200 font-bold mb-1 truncate">{day.name}</div>
+                                            <div className="text-xs text-slate-500 mb-3">{day.exercises.length} Exercises</div>
+                                            <div className="flex -space-x-1.5 overflow-hidden">
+                                                {day.exercises.slice(0, 3).map((ex: any) => (
+                                                    <div key={ex.id} className="w-5 h-5 rounded-full bg-slate-700 border border-slate-800 flex items-center justify-center text-[8px] text-slate-300">
+                                                        {ex.name[0]}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </button>
+                                    ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {!suggestedWorkout && (
+                        <>
+                            <h1 className="text-3xl font-bold text-white mb-2">Ready to Train?</h1>
+                            <p className="text-slate-400 mb-8 max-w-md">
+                                Select a routine from the Management view or start a quick workout right here.
+                            </p>
+                        </>
+                    )}
+
+                </div>
             </div>
         );
     }

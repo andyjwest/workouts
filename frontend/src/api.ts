@@ -1,4 +1,18 @@
-const API_BASE_URL = 'http://localhost:8001';
+const getApiBaseUrl = () => {
+    // If we're in a browser environment, construct the URL dynamically
+    if (typeof window !== 'undefined') {
+        const hostname = window.location.hostname;
+        // Check for Vite env override
+        if (import.meta.env.VITE_API_URL && !import.meta.env.VITE_API_URL.includes('localhost')) {
+            return import.meta.env.VITE_API_URL;
+        }
+        // Fallback or default assumption: Backend runs on port 8001 of the same host
+        return `http://${hostname}:8001`;
+    }
+    return 'http://localhost:8001';
+};
+
+const API_BASE_URL = getApiBaseUrl();
 
 export const api = {
     get: async <T>(endpoint: string): Promise<T> => {

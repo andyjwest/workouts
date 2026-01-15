@@ -563,6 +563,121 @@ def create_exercise(exercise: Exercise):
         conn.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
+class DeleteExerciseRequest(BaseModel):
+    strategy: str # "delete_all", "migrate_to_existing", "migrate_to_new"
+    target_exercise_id: Optional[int] = None
+    new_exercise_name: Optional[str] = None
+
+@app.get("/exercises/{exercise_id}/usage")
+def get_exercise_usage(exercise_id: int):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("SELECT COUNT(*) FROM workout_exercises WHERE exercise_id = %s", (exercise_id,))
+        workout_count = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT COUNT(*) FROM routine_exercises WHERE exercise_id = %s", (exercise_id,))
+        routine_count = cursor.fetchone()[0]
+        
+        cursor.close()
+        conn.close()
+        return {"workout_count": workout_count, "routine_count": routine_count}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/exercises/{exercise_id}/delete")
+def delete_exercise_with_migration(exercise_id: int, request: DeleteExerciseRequest):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        
+        # Validation
+        if request.strategy == "migrate_to_existing" and not request.target_exercise_id:
+             raise HTTPException(status_code=400, detail="Target exercise ID required for migration")
+             
+        if request.strategy == "migrate_to_new" and not request.new_exercise_name:
+             raise HTTPException(status_code=400, detail="New exercise name required for migration")
+
+        target_id = request.target_exercise_id
+
+        # Logic for "migrate_to_new"
+        if request.strategy == "migrate_to_new":
+             # Fetch source details
+             cursor.execute("SELECT * FROM exercises WHERE id = %s", (exercise_id,))
+             source = cursor.fetchone()
+             if not source:
+                 raise HTTPException(status_code=404, detail="Source exercise not found")
+                 
+             # Insert new
+             # We skip muscle mapping copy for now as decided, or we can add it later if needed.
+             # Actually, let's copy the basic fields.
+             try:
+                 cursor.execute(
+                    """INSERT INTO exercises (name, description, type, equipment, default_tempo, tracked_metrics, default_sets, default_reps, default_rest_seconds, default_weight_percent, default_time_seconds) 
+                       VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING id""",
+                    (request.new_exercise_name, source['description'], source['type'], source['equipment'], source['default_tempo'], source['tracked_metrics'], source['default_sets'], source['default_reps'], source['default_rest_seconds'], source['default_weight_percent'], source['default_time_seconds'])
+                 )
+                 target_id = cursor.fetchone()[0]
+                 
+                 # Copy muscle associations
+                 cursor.execute("SELECT * FROM exercise_muscles WHERE exercise_id = %s", (exercise_id,))
+                 muscles = cursor.fetchall()
+                 for m in muscles:
+                     cursor.execute("INSERT INTO exercise_muscles (exercise_id, muscle_id, is_primary) VALUES (%s, %s, %s)", (target_id, m['muscle_id'], m['is_primary']))
+                     
+             except psycopg2.errors.UniqueViolation:
+                 conn.rollback()
+                 raise HTTPException(status_code=409, detail=f"Exercise '{request.new_exercise_name}' already exists")
+
+        # Logic for migration
+        if request.strategy in ["migrate_to_existing", "migrate_to_new"]:
+            # Migrate Workout History
+            cursor.execute("UPDATE workout_exercises SET exercise_id = %s WHERE exercise_id = %s", (target_id, exercise_id))
+            
+            # Migrate Routines
+            cursor.execute("UPDATE routine_exercises SET exercise_id = %s WHERE exercise_id = %s", (target_id, exercise_id))
+
+        # Delete source (Standard delete logic)
+        # 1. Delete associations if they still exist (for delete_all case, or cleanup)
+        # Note: If migrated, these counts should be 0, but good to be safe.
+        
+        # Delete from workout_exercises (cascades sets? No, need to check schema. usually sets refer to workout_exercise_id. 
+        # If we didn't migrate, we must delete sets first.)
+        
+        if request.strategy == "delete_all":
+             # Delete Sets
+             cursor.execute("DELETE FROM workout_sets WHERE workout_exercise_id IN (SELECT id FROM workout_exercises WHERE exercise_id = %s)", (exercise_id,))
+             # Delete Workout Exercises
+             cursor.execute("DELETE FROM workout_exercises WHERE exercise_id = %s", (exercise_id,))
+             # Delete Routine Exercises
+             cursor.execute("DELETE FROM routine_exercises WHERE exercise_id = %s", (exercise_id,))
+        
+        # Delete from exercise_muscles
+        cursor.execute("DELETE FROM exercise_muscles WHERE exercise_id = %s", (exercise_id,))
+        
+        # Delete Exercise
+        cursor.execute("DELETE FROM exercises WHERE id = %s RETURNING id", (exercise_id,))
+        deleted = cursor.fetchone()
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        if not deleted:
+            raise HTTPException(status_code=404, detail="Exercise not found or already deleted")
+            
+        return {"status": "success", "migrated_to": target_id}
+
+    except HTTPException:
+        if 'conn' in locals() and conn:
+            conn.rollback()
+        raise
+    except Exception as e:
+        if 'conn' in locals() and conn:
+            conn.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/exercises/{exercise_id}", response_model=Exercise)
 def get_exercise(exercise_id: int):
     try:
@@ -584,6 +699,8 @@ def get_exercise(exercise_id: int):
         if exercise_data is None:
             raise HTTPException(status_code=404, detail="Exercise not found")
         return Exercise(**exercise_data)
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

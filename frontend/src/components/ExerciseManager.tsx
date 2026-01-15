@@ -2,14 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import type { Exercise } from '../types';
-import { Plus, Search, Edit2 } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2 } from 'lucide-react';
 import ExerciseModal from './ExerciseModal';
+import ExerciseDeleteModal from './ExerciseDeleteModal';
 
 const ExerciseManager: React.FC = () => {
     const [exercises, setExercises] = useState<Exercise[]>([]);
     const [search, setSearch] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
+
+    const [deletingExercise, setDeletingExercise] = useState<Exercise | null>(null);
 
     useEffect(() => {
         loadExercises();
@@ -38,8 +41,17 @@ const ExerciseManager: React.FC = () => {
         setIsModalOpen(true);
     };
 
+    const handleDeleteClick = (exercise: Exercise) => {
+        setDeletingExercise(exercise);
+    };
+
     const handleSave = () => {
         setIsModalOpen(false);
+        loadExercises();
+    };
+
+    const handleDeleteSuccess = () => {
+        setDeletingExercise(null);
         loadExercises();
     };
 
@@ -83,7 +95,9 @@ const ExerciseManager: React.FC = () => {
                                 <button onClick={() => handleEdit(exercise)} className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-sky-400">
                                     <Edit2 size={16} />
                                 </button>
-                                {/* Delete button could go here */}
+                                <button onClick={() => handleDeleteClick(exercise)} className="p-2 hover:bg-slate-800 rounded-lg text-slate-400 hover:text-red-400 transition-colors">
+                                    <Trash2 size={16} />
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -95,6 +109,16 @@ const ExerciseManager: React.FC = () => {
                     exercise={editingExercise}
                     onClose={() => setIsModalOpen(false)}
                     onSave={handleSave}
+                />
+            )}
+
+            {deletingExercise && (
+                <ExerciseDeleteModal
+                    exercise={deletingExercise}
+                    allExercises={exercises}
+                    isOpen={true}
+                    onClose={() => setDeletingExercise(null)}
+                    onDeleteSuccess={handleDeleteSuccess}
                 />
             )}
         </div>
