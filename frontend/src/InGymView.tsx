@@ -5,14 +5,42 @@ import ExerciseCard from './components/ExerciseCard';
 import RestTimer from './components/RestTimer';
 import { ChevronLeft, ChevronRight, Play, CheckCircle2, ChevronDown, Save, Plus } from 'lucide-react';
 import clsx from 'clsx';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import AddExerciseModal from './components/AddExerciseModal';
 
 const InGymView: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+
     const [activeWorkout, setActiveWorkout] = useState<Workout | null>(null);
-    const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
+
+    const currentExerciseIndexParam = parseInt(searchParams.get('exercise') || '0');
+    let currentExerciseIndex = isNaN(currentExerciseIndexParam) ? 0 : currentExerciseIndexParam;
+
+    // Bounds check
+    if (activeWorkout?.exercises) {
+        if (currentExerciseIndex < 0) currentExerciseIndex = 0;
+        if (currentExerciseIndex >= activeWorkout.exercises.length) {
+            currentExerciseIndex = Math.max(0, activeWorkout.exercises.length - 1);
+        }
+    }
+
+    const setCurrentExerciseIndex = (value: number | ((prev: number) => number)) => {
+        const currentVal = parseInt(searchParams.get('exercise') || '0') || 0;
+
+        let newValue: number;
+        if (typeof value === 'function') {
+            newValue = value(currentVal);
+        } else {
+            newValue = value;
+        }
+
+        const newParams = new URLSearchParams(searchParams);
+        newParams.set('exercise', newValue.toString());
+        setSearchParams(newParams, { replace: true });
+    };
+
     const [isLoading, setIsLoading] = useState(false);
 
     const [suggestedWorkout, setSuggestedWorkout] = useState<any | null>(null);
@@ -36,8 +64,12 @@ const InGymView: React.FC = () => {
                     const active = await api.get<Workout | null>('/workouts/active');
                     if (active) {
                         setActiveWorkout(active);
-                        // Find first incomplete exercise to jump to
-                        if (active.exercises) {
+
+                        // Check if we have an explicit exercise index in URL
+                        const hasExplicitIndex = searchParams.has('exercise');
+
+                        if (!hasExplicitIndex && active.exercises) {
+                            // Find first incomplete exercise to jump to
                             const firstIncompleteIdx = active.exercises.findIndex(ex =>
                                 !ex.sets || !ex.sets.every(s => s.completed)
                             );
