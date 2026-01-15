@@ -14,15 +14,34 @@ interface ExerciseCardProps {
     onMoveDown?: () => void;
 }
 
+// Internal type to track sets with a stable local ID
+type LocalSet = WorkoutSet & { _localId: string };
+
 const ExerciseCard: React.FC<ExerciseCardProps> = ({ workoutExercise, exercise, onUpdate, onDelete, onSwap, onMoveUp, onMoveDown }) => {
-    const [sets, setSets] = useState<WorkoutSet[]>(workoutExercise.sets || []);
+    // Initialize sets with unique local IDs
+    const [sets, setSets] = useState<LocalSet[]>(() => {
+        return (workoutExercise.sets || []).map(s => ({
+            ...s,
+            _localId: crypto.randomUUID()
+        }));
+    });
+
+    // Check for external updates to sets (e.g. initial load or reset)
+    // If the props change significantly (e.g. completely new array from backend not initiated by us), we might need to sync.
+    // However, for now, we rely on local state being the driver during editing.
+    // BUT: if we swap exercise, we want to preserve sets but maybe re-init?
+    // Actually, when key={workoutExercise.id} changes (which happens on swap if ID changes), this component remounts, so init runs again.
+    // If ID stays same (e.g. just updating data), we don't want to reset local state.
+
     const [showMenu, setShowMenu] = useState(false);
 
-    const updateParent = (newSets: WorkoutSet[]) => {
+    const updateParent = (newSets: LocalSet[]) => {
         if (onUpdate) {
+            // Strip _localId before sending up
+            const cleanSets = newSets.map(({ _localId, ...rest }) => rest);
             onUpdate({
                 ...workoutExercise,
-                sets: newSets
+                sets: cleanSets
             });
         }
     };
@@ -31,7 +50,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({ workoutExercise, exercise, 
         const lastSet = sets.length > 0 ? sets[sets.length - 1] : null;
 
         // Optimistically add a new set
-        const newSet: WorkoutSet = {
+        const newSet: LocalSet = {
             id: 0, // Temp ID
             workout_exercise_id: workoutExercise.id,
             set_number: sets.length + 1,
@@ -39,7 +58,8 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({ workoutExercise, exercise, 
             weight_kg: lastSet?.weight_kg,
             reps: lastSet?.reps,
             duration_seconds: lastSet?.duration_seconds,
-            tempo: lastSet?.tempo
+            tempo: lastSet?.tempo,
+            _localId: crypto.randomUUID()
         };
         const newSets = [...sets, newSet];
         setSets(newSets);
@@ -47,16 +67,27 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({ workoutExercise, exercise, 
     };
 
     const handleSetSave = (savedSet: WorkoutSet) => {
-        const newSets = sets.map(s => s.set_number === savedSet.set_number ? savedSet : s);
+        // Find which local set this corresponds to by set_number (which we trust for the row being edited)
+        // Better: we pass the _localId to the logger and get it back?
+        // But SetLogger doesn't know about _localId.
+        // It's okay, we can map by set_number since that is stable during the save operation of a single row.
+
+        // Wait, if we delete a row above while this one is saving... set_number might have shifted?
+        // But SetLogger knows its *own* setNumber? No, it receives it as prop.
+        // If re-render happens, setNumber prop updates.
+
+        const newSets = sets.map(s => {
+            if (s.set_number === savedSet.set_number) {
+                return { ...savedSet, _localId: s._localId };
+            }
+            return s;
+        });
 
         // Auto-forward weight to next set if it's empty
         const currentIndex = sets.findIndex(s => s.set_number === savedSet.set_number);
         if (currentIndex !== -1 && currentIndex < sets.length - 1) {
             const nextSet = newSets[currentIndex + 1];
             if (!nextSet.weight_kg && savedSet.weight_kg) {
-                // Creates a new object for the next set with weight populated
-                // Note: we don't save this to DB yet, just update local state 
-                // so the user sees it pre-filled in the next row
                 newSets[currentIndex + 1] = {
                     ...nextSet,
                     weight_kg: savedSet.weight_kg
@@ -69,6 +100,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({ workoutExercise, exercise, 
     };
 
     const handleSetDelete = async (index: number) => {
+        // Use the index from the map iterator
         const setToDelete = sets[index];
         if (setToDelete.id !== 0) {
             try {
@@ -78,7 +110,12 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({ workoutExercise, exercise, 
                 return;
             }
         }
-        const newSets = sets.filter((_, i) => i !== index).map((s, i) => ({ ...s, set_number: i + 1 }));
+
+        // Remove and re-number
+        const newSets = sets
+            .filter((_, i) => i !== index)
+            .map((s, i) => ({ ...s, set_number: i + 1 }));
+
         setSets(newSets);
         updateParent(newSets);
     };
@@ -145,7 +182,7 @@ const ExerciseCard: React.FC<ExerciseCardProps> = ({ workoutExercise, exercise, 
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {sets.map((set, index) => (
                     <SetLogger
-                        key={index}
+                        key={set._localId}
                         workoutExerciseId={workoutExercise.id}
                         exerciseId={exercise.id}
                         setNumber={index + 1}

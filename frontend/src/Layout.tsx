@@ -28,7 +28,7 @@ const Layout: React.FC = () => {
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 overflow-auto pb-20 md:pb-0 relative">
+            <main className="flex-1 overflow-auto pb-20 md:pb-0 relative overscroll-y-none">
                 <Outlet />
             </main>
 
